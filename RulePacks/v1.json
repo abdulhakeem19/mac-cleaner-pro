@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "packVersion": "1.0.0",
+  "issuedAt": "2026-04-25T00:00:00Z",
+  "minAppVersion": "1.0.0",
+  "rules": [
+    {
+      "id": "user.caches",
+      "category": "caches",
+      "displayName": "User caches",
+      "description": "App-specific cache files in your home Library. Apps regenerate these on next launch.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "paths": ["~/Library/Caches/*"],
+      "excludes": [
+        "~/Library/Caches/com.apple.Safari/Webpage Previews",
+        "~/Library/Caches/CloudKit"
+      ]
+    },
+    {
+      "id": "system.caches",
+      "category": "caches",
+      "displayName": "System caches",
+      "description": "System-level cache files. Requires the privileged helper.",
+      "safety": "reviewRecommended",
+      "requiresHelper": true,
+      "paths": ["/Library/Caches/*"],
+      "excludes": ["/Library/Caches/com.apple.aned"]
+    },
+    {
+      "id": "user.logs",
+      "category": "logs",
+      "displayName": "User logs",
+      "description": "Application diagnostic logs in your home Library.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "paths": ["~/Library/Logs/**/*"]
+    },
+    {
+      "id": "xcode.derivedData",
+      "category": "developer",
+      "displayName": "Xcode DerivedData",
+      "description": "Build intermediates Xcode regenerates on next build. Often 10+ GB for active developers.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "paths": ["~/Library/Developer/Xcode/DerivedData/*"]
+    },
+    {
+      "id": "xcode.deviceSupport",
+      "category": "developer",
+      "displayName": "Xcode iOS DeviceSupport (old versions)",
+      "description": "Symbol files for iOS versions older than the current major. Re-downloaded on demand.",
+      "safety": "reviewRecommended",
+      "requiresHelper": false,
+      "paths": ["~/Library/Developer/Xcode/iOS DeviceSupport/*"],
+      "olderThanDays": 180
+    },
+    {
+      "id": "xcode.archives.old",
+      "category": "developer",
+      "displayName": "Xcode Archives (older than 6 months)",
+      "description": "Old build archives. Recent ones are kept for crash symbolication.",
+      "safety": "reviewRecommended",
+      "requiresHelper": false,
+      "paths": ["~/Library/Developer/Xcode/Archives/*"],
+      "olderThanDays": 180
+    },
+    {
+      "id": "browser.safari.cache",
+      "category": "browser",
+      "displayName": "Safari cache",
+      "description": "Cached web content. Doesn't affect bookmarks, history, or saved passwords.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "paths": ["~/Library/Caches/com.apple.Safari/*"]
+    },
+    {
+      "id": "browser.chrome.cache",
+      "category": "browser",
+      "displayName": "Chrome cache (all profiles)",
+      "description": "Cached web content for every Chrome profile.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "paths": [
+        "~/Library/Application Support/Google/Chrome/*/Cache",
+        "~/Library/Application Support/Google/Chrome/*/Code Cache",
+        "~/Library/Caches/Google/Chrome/*"
+      ]
+    },
+    {
+      "id": "browser.firefox.cache",
+      "category": "browser",
+      "displayName": "Firefox cache (all profiles)",
+      "description": "Cached web content for every Firefox profile.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "paths": ["~/Library/Caches/Firefox/Profiles/*/cache2"]
+    },
+    {
+      "id": "mail.downloads",
+      "category": "mail",
+      "displayName": "Mail downloads",
+      "description": "Attachments downloaded by Mail.app. Originals remain on the server.",
+      "safety": "reviewRecommended",
+      "requiresHelper": false,
+      "paths": ["~/Library/Containers/com.apple.mail/Data/Library/Mail Downloads/*"]
+    }
+  ]
+}

@@ -1,0 +1,92 @@
+import Foundation
+import CryptoKit
+
+// Verifies an Ed25519-signed rule pack against a public key pinned at compile time.
+//
+// Threat model:
+//   - GitHub account or release pipeline gets compromised → attacker swaps rules.json
+//     for one that points cleanup paths at user data.
+//   - With this verifier in place, even a fully-compromised distribution channel
+//     cannot deliver a rule pack the app will execute, because the private key
+//     never lives in that channel.
+//
+// IMPORTANT: never verify a re-encoded copy. Verify the exact bytes you fetched.
+
+public enum RulePackVerifierError: Error, Sendable {
+    case publicKeyNotConfigured
+    case malformedSignature
+    case signatureInvalid
+    case decodeFailed(Error)
+    case schemaVersionUnsupported(Int)
+    case appVersionTooOld(required: String)
+}
+
+public struct RulePackVerifier: Sendable {
+
+    // Paste the contents of keys/rulepack_public.b64 here after running tools/keygen.sh.
+    // Raw 32-byte Ed25519 public key, base64-encoded, single line.
+    // Empty string means "not yet configured" — the verifier will refuse to run.
+    public static let trustedPublicKeyB64 = ""
+
+    public static let supportedSchemaVersion = 1
+
+    public init() {}
+
+    /// Verify and decode a rule pack.
+    /// - parameters:
+    ///   - packData: raw bytes of rules.json AS FETCHED (not re-encoded)
+    ///   - signatureB64: base64-encoded Ed25519 signature from rules.json.sig
+    ///   - currentAppVersion: dotted semver of the running app, for minAppVersion gating
+    public func verify(
+        packData: Data,
+        signatureB64: String,
+        currentAppVersion: String
+    ) throws -> RulePack {
+        guard !Self.trustedPublicKeyB64.isEmpty,
+              let pubKeyData = Data(base64Encoded: Self.trustedPublicKeyB64),
+              let publicKey = try? Curve25519.Signing.PublicKey(rawRepresentation: pubKeyData)
+        else {
+            throw RulePackVerifierError.publicKeyNotConfigured
+        }
+
+        let trimmedB64 = signatureB64.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let signature = Data(base64Encoded: trimmedB64), signature.count == 64 else {
+            throw RulePackVerifierError.malformedSignature
+        }
+
+        guard publicKey.isValidSignature(signature, for: packData) else {
+            throw RulePackVerifierError.signatureInvalid
+        }
+
+        let pack: RulePack
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            pack = try decoder.decode(RulePack.self, from: packData)
+        } catch {
+            throw RulePackVerifierError.decodeFailed(error)
+        }
+
+        guard pack.schemaVersion == Self.supportedSchemaVersion else {
+            throw RulePackVerifierError.schemaVersionUnsupported(pack.schemaVersion)
+        }
+
+        if compareSemver(currentAppVersion, pack.minAppVersion) == .orderedAscending {
+            throw RulePackVerifierError.appVersionTooOld(required: pack.minAppVersion)
+        }
+
+        return pack
+    }
+
+    private func compareSemver(_ a: String, _ b: String) -> ComparisonResult {
+        let lhs = a.split(separator: ".").compactMap { Int($0) }
+        let rhs = b.split(separator: ".").compactMap { Int($0) }
+        for i in 0..<max(lhs.count, rhs.count) {
+            let l = i < lhs.count ? lhs[i] : 0
+            let r = i < rhs.count ? rhs[i] : 0
+            if l < r { return .orderedAscending }
+            if l > r { return .orderedDescending }
+        }
+        return .orderedSame
+    }
+}

@@ -1,3 +1,12 @@
+# Rule-pack signing keys — private key MUST NEVER be committed.
+# Public key files are explicitly re-allowed below.
+keys/*
+!keys/rulepack_public.pem
+!keys/rulepack_public.b64
+
+# XcodeGen output — project is generated from project.yml, don't commit.
+*.xcodeproj/
+
 # Xcode
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
