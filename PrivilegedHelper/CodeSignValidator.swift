@@ -10,7 +10,7 @@ enum CodeSignValidator {
     /// once code-signing is wired with a Developer ID certificate.
     private static let appRequirementString =
         "anchor apple generic " +
-        "and identifier \"com.privachat.maccleanerpro\" " +
+        "and identifier \"com.maccleanerpro\" " +
         "and certificate leaf[subject.OU] = \"REPLACE_TEAM_ID\""
 
     static func connectionMatchesAppRequirement(_ connection: NSXPCConnection) -> Bool {

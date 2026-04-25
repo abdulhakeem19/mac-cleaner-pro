@@ -14,7 +14,22 @@
       "paths": ["~/Library/Caches/*"],
       "excludes": [
         "~/Library/Caches/com.apple.Safari/Webpage Previews",
-        "~/Library/Caches/CloudKit"
+        "~/Library/Caches/CloudKit",
+        "~/Library/Caches/com.apple.HomeKit",
+        "~/Library/Caches/com.apple.Photos",
+        "~/Library/Caches/com.apple.AddressBook",
+        "~/Library/Caches/com.apple.AppleMediaServices",
+        "~/Library/Caches/com.apple.Music",
+        "~/Library/Caches/com.apple.TV",
+        "~/Library/Caches/com.apple.appleaccountd",
+        "~/Library/Caches/com.apple.iCloudHelper",
+        "~/Library/Caches/com.apple.bird",
+        "~/Library/Caches/com.apple.Mail",
+        "~/Library/Caches/com.apple.Notes",
+        "~/Library/Caches/com.apple.icloud.searchpartyuseragent",
+        "~/Library/Caches/com.apple.news",
+        "~/Library/Caches/com.apple.Maps",
+        "~/Library/Caches/com.apple.parsecd"
       ]
     },
     {

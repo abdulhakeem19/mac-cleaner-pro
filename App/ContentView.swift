@@ -1,64 +1,42 @@
 import SwiftUI
 import Core
 
+private enum SidebarItem: Hashable {
+    case smartScan, largeFiles, uninstaller, activityLog
+    #if DEBUG
+    case helperSmokeTest
+    #endif
+}
+
 struct ContentView: View {
-    @State private var bundledPackStatus: String = "Loading…"
+    @State private var selection: SidebarItem? = .smartScan
 
     var body: some View {
         NavigationSplitView {
-            List {
-                Label("Smart Scan", systemImage: "sparkles")
-                Label("Large & Old Files", systemImage: "doc.text.magnifyingglass")
-                Label("App Uninstaller", systemImage: "trash.square")
-                Label("Activity Log", systemImage: "clock.arrow.circlepath")
+            List(selection: $selection) {
+                Label("Smart Scan", systemImage: "sparkles").tag(SidebarItem.smartScan)
+                Label("Large & Old Files", systemImage: "doc.text.magnifyingglass").tag(SidebarItem.largeFiles)
+                Label("App Uninstaller", systemImage: "trash.square").tag(SidebarItem.uninstaller)
+                Label("Activity Log", systemImage: "clock.arrow.circlepath").tag(SidebarItem.activityLog)
+                #if DEBUG
+                Section("Developer") {
+                    Label("Helper Smoke Test", systemImage: "stethoscope").tag(SidebarItem.helperSmokeTest)
+                }
+                #endif
             }
             .listStyle(.sidebar)
             .navigationTitle("Mac Cleaner Pro")
         } detail: {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Welcome to Mac Cleaner Pro")
-                    .font(.largeTitle).bold()
-                Text("Bundled rule pack: \(bundledPackStatus)")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        }
-        .task { await loadBundledPack() }
-    }
-
-    private func loadBundledPack() async {
-        guard let url = Bundle.main.url(forResource: "v1", withExtension: "json"),
-              let data = try? Data(contentsOf: url) else {
-            bundledPackStatus = "missing"
-            return
-        }
-        do {
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            let pack = try decoder.decode(RulePack.self, from: data)
-            bundledPackStatus = "v\(pack.packVersion) — \(pack.rules.count) rules"
-        } catch {
-            bundledPackStatus = "decode failed: \(error)"
-        }
-    }
-}
-
-struct SettingsView: View {
-    var body: some View {
-        Form {
-            Section("Privacy") {
-                Toggle("Send anonymous usage data", isOn: .constant(false))
-                Toggle("Send crash reports", isOn: .constant(false))
-            }
-            Section("Updates") {
-                Toggle("Check for updates automatically", isOn: .constant(true))
+            switch selection ?? .smartScan {
+            case .smartScan:    SmartScanView()
+            case .largeFiles:   LargeFilesView()
+            case .uninstaller:  UninstallerView()
+            case .activityLog:  ActivityLogView()
+            #if DEBUG
+            case .helperSmokeTest: HelperSmokeTestView()
+            #endif
             }
         }
-        .padding(24)
-        .frame(width: 480, height: 280)
     }
 }
 

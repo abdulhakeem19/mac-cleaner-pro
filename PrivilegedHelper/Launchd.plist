@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.privachat.maccleanerpro.helper</string>
+    <string>com.maccleanerpro.helper</string>
     <key>MachServices</key>
     <dict>
-        <key>com.privachat.maccleanerpro.helper</key>
+        <key>com.maccleanerpro.helper</key>
         <true/>
     </dict>
     <key>BundleProgram</key>
-    <string>Contents/MacOS/com.privachat.maccleanerpro.helper</string>
+    <string>Contents/MacOS/com.maccleanerpro.helper</string>
     <key>AssociatedBundleIdentifiers</key>
     <array>
-        <string>com.privachat.maccleanerpro</string>
+        <string>com.maccleanerpro</string>
     </array>
 </dict>
 </plist>
