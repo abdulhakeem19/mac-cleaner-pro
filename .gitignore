@@ -71,3 +71,15 @@ fastlane/screenshots/**/*.png
 fastlane/test_output
 /maccleanerpro
 /out
+desktop/out/
+
+# Web (Next.js landing)
+web/node_modules/
+web/.next/
+web/out/
+web/.turbo/
+web/.vercel/
+web/*.log
+
+# OS
+.DS_Store

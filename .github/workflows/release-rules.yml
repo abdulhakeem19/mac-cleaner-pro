@@ -1,7 +1,7 @@
 name: Release rule pack
 
 # Triggered by tags shaped like rules-v1.2.3.
-# Signs RulePacks/<tag>.json with the private key from secrets and uploads
+# Signs desktop/RulePacks/<tag>.json with the private key from secrets and uploads
 # the JSON + signature to a GitHub Release.
 #
 # IMPORTANT: this workflow lives in the public mac-cleaner-pro-rules repo.
@@ -24,10 +24,10 @@ jobs:
       - name: Resolve pack file from tag
         id: pack
         run: |
-          # Tag rules-v1.2.3 → file RulePacks/v1.json (major version only).
+          # Tag rules-v1.2.3 → file desktop/RulePacks/v1.json (major version only).
           TAG="${GITHUB_REF_NAME#rules-v}"
           MAJOR="${TAG%%.*}"
-          FILE="RulePacks/v${MAJOR}.json"
+          FILE="desktop/RulePacks/v${MAJOR}.json"
           if [[ ! -f "$FILE" ]]; then
             echo "ERROR: $FILE does not exist for tag $GITHUB_REF_NAME" >&2
             exit 1
@@ -42,10 +42,10 @@ jobs:
             echo "ERROR: RULEPACK_PRIVATE_KEY secret is not set." >&2
             exit 1
           fi
-          ./tools/sign-rules.sh "${{ steps.pack.outputs.file }}"
+          ./desktop/tools/sign-rules.sh "${{ steps.pack.outputs.file }}"
 
       - name: Verify signature (sanity)
-        run: ./tools/verify-rules.sh "${{ steps.pack.outputs.file }}"
+        run: ./desktop/tools/verify-rules.sh "${{ steps.pack.outputs.file }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

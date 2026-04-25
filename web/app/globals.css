@@ -1,0 +1,459 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Design tokens — lifted from the prototype's styles.css.
+   Tailwind v4 reads these via @theme and exposes them as utilities
+   (e.g. bg-bg-0, text-accent, etc.) plus they remain consumable as
+   raw CSS custom properties for inline styles and motion.
+   ============================================================ */
+@theme {
+  --color-bg-0: #0A0B0F;
+  --color-bg-1: #0E1016;
+  --color-bg-2: #14171F;
+  --color-bg-3: #1A1E28;
+  --color-text: #F4F6FA;
+  --color-text-dim: #A4ABB8;
+  --color-text-muted: #6B7280;
+
+  --color-accent: #7C5CFF;
+  --color-accent-2: #0A84FF;
+
+  --color-ok: #30D158;
+  --color-warn: #FFB340;
+  --color-bad: #FF453A;
+
+  --radius-r-sm: 8px;
+  --radius-r-md: 14px;
+  --radius-r-lg: 22px;
+  --radius-r-xl: 32px;
+
+  --font-sans: var(--font-geist), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, Menlo, monospace;
+}
+
+:root,
+[data-theme="dark"] {
+  --bg-0: #0A0B0F;
+  --bg-1: #0E1016;
+  --bg-2: #14171F;
+  --bg-3: #1A1E28;
+  --surface: rgba(22, 25, 34, 0.65);
+  --surface-hi: rgba(30, 34, 46, 0.75);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hi: rgba(255, 255, 255, 0.14);
+  --text: #F4F6FA;
+  --text-dim: #A4ABB8;
+  --text-muted: #6B7280;
+
+  --accent: #7C5CFF;
+  --accent-2: #0A84FF;
+  --accent-soft: rgba(124, 92, 255, 0.15);
+  --accent-ring: rgba(124, 92, 255, 0.35);
+  --accent-grad: linear-gradient(135deg, #0A84FF 0%, #7C5CFF 60%, #B47BFF 100%);
+
+  --ok: #30D158;
+  --warn: #FFB340;
+
+  --ease: cubic-bezier(.22, 1, .36, 1);
+
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 32px;
+
+  --section-pad-y: 140px;
+  --gap: 28px;
+}
+
+[data-theme="light"] {
+  --bg-0: #F6F7FB;
+  --bg-1: #FFFFFF;
+  --bg-2: #F1F3F9;
+  --bg-3: #E7EBF3;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-hi: rgba(255, 255, 255, 0.92);
+  --border: rgba(10, 11, 15, 0.10);
+  --border-hi: rgba(10, 11, 15, 0.18);
+  --text: #0A0B0F;
+  --text-dim: #3A4150;        /* darker than dark-mode equiv so prose stays readable */
+  --text-muted: #6B7286;      /* darker muted for legible captions on white */
+  --accent-soft: rgba(124, 92, 255, 0.12);
+  --accent-ring: rgba(124, 92, 255, 0.35);
+}
+
+[data-theme="light"] body {
+  background:
+    radial-gradient(1400px 700px at 50% -300px, rgba(10,132,255,0.14), transparent 60%),
+    radial-gradient(900px 500px at 90% 10%, rgba(124,92,255,0.10), transparent 60%),
+    var(--bg-0);
+}
+
+[data-theme="light"] .glass {
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 20px 60px -20px rgba(10,20,50,0.15);
+}
+
+[data-theme="light"] .app-window {
+  box-shadow:
+    0 40px 100px -20px rgba(10,20,50,0.25),
+    0 0 0 1px rgba(255,255,255,0.6) inset;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -200px, rgba(10,132,255,0.18), transparent 60%),
+    radial-gradient(900px 500px at 90% 10%, rgba(124,92,255,0.14), transparent 60%),
+    var(--bg-0);
+  min-height: 100dvh;
+}
+
+img { max-width: 100%; display: block; }
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text);
+}
+
+p { margin: 0; color: var(--text-dim); line-height: 1.6; }
+
+a { color: inherit; text-decoration: none; }
+
+.mono { font-family: var(--font-mono); font-feature-settings: 'ss02'; }
+
+.container-x {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.section {
+  padding: var(--section-pad-y) 0;
+  position: relative;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-ring);
+}
+
+.h-display {
+  font-size: clamp(44px, 6vw, 84px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+
+.h-section {
+  font-size: clamp(36px, 4.2vw, 60px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.lede {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  max-width: 640px;
+}
+
+.gradient-text {
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-radius: var(--r-lg);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 20px 60px -20px rgba(0,0,0,0.5);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  background: var(--accent-grad);
+  color: white;
+  box-shadow: 0 8px 24px -8px rgba(124,92,255,0.6), 0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 36px -8px rgba(124,92,255,0.85), 0 0 0 1px rgba(255,255,255,0.16) inset; }
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-18deg);
+  transition: left .7s var(--ease);
+  pointer-events: none;
+}
+.btn-primary:hover::after { left: 130%; }
+
+.btn-secondary {
+  background: var(--surface-hi);
+  color: var(--text);
+  border-color: var(--border-hi);
+  backdrop-filter: blur(12px);
+}
+.btn-secondary:hover { background: var(--bg-3); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-ghost:hover { background: var(--surface); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.pill-ok { color: var(--ok); border-color: rgba(48,209,88,0.25); background: rgba(48,209,88,0.08); }
+.pill-warn { color: var(--warn); border-color: rgba(255,179,64,0.25); background: rgba(255,179,64,0.08); }
+.pill-accent { color: var(--accent); border-color: var(--accent-ring); background: var(--accent-soft); }
+
+.app-window {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-1);
+  border: 1px solid var(--border-hi);
+  box-shadow:
+    0 40px 100px -20px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.04) inset;
+}
+.app-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  border-bottom: 1px solid var(--border);
+  height: 38px;
+}
+.traffic { display: flex; gap: 8px; }
+.traffic span {
+  width: 12px; height: 12px; border-radius: 50%;
+  display: inline-block;
+}
+.traffic span:nth-child(1) { background: #FF5F57; }
+.traffic span:nth-child(2) { background: #FEBC2E; }
+.traffic span:nth-child(3) { background: #28C840; }
+
+.titlebar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+}
+
+.hr {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hi), transparent);
+  border: none;
+  margin: 0;
+}
+
+.noise::after {
+  content:'';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: .03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+@keyframes pulse {
+  0%, 100% { opacity: .4; transform: scale(1); }
+  50%      { opacity: 1;  transform: scale(1.04); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Animated conic-gradient ring used by the primary pricing card.
+   The card itself gets a thin border via a wrapping pseudo-element. */
+@keyframes conic {
+  to { --angle: 360deg; }
+}
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.glow-ring {
+  position: relative;
+  isolation: isolate;
+}
+.glow-ring::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--angle),
+    rgba(124,92,255,0.0) 0deg,
+    rgba(10,132,255,0.85) 80deg,
+    rgba(124,92,255,0.95) 160deg,
+    rgba(180,123,255,0.7) 220deg,
+    rgba(124,92,255,0.0) 320deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: conic 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .glow-ring::before { animation: none; }
+}
+
+/* ---- Section accent backgrounds — subtly tint alternating sections so the
+   page reads as a sequence of distinct moments instead of one long settings panel. */
+.section-accent-blue,
+.section-accent-purple,
+.section-accent-green { position: relative; isolation: isolate; }
+.section-accent-blue::before,
+.section-accent-purple::before,
+.section-accent-green::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.section-accent-blue::before {
+  background:
+    radial-gradient(900px 380px at 0% 30%, rgba(10,132,255,0.10), transparent 60%);
+}
+.section-accent-purple::before {
+  background:
+    radial-gradient(900px 380px at 100% 60%, rgba(124,92,255,0.13), transparent 60%);
+}
+.section-accent-green::before {
+  background:
+    radial-gradient(700px 320px at 50% 100%, rgba(48,209,88,0.08), transparent 60%);
+}
+.section-accent-blue > *,
+.section-accent-purple > *,
+.section-accent-green > * { position: relative; z-index: 1; }
+
+/* Light-theme tweak for noisy gradients — the same rgba percentages read too
+   strong on white. Soften them. */
+[data-theme="light"] .section-accent-blue::before {
+  background:
+    radial-gradient(900px 380px at 0% 30%, rgba(10,132,255,0.07), transparent 60%);
+}
+[data-theme="light"] .section-accent-purple::before {
+  background:
+    radial-gradient(900px 380px at 100% 60%, rgba(124,92,255,0.08), transparent 60%);
+}
+[data-theme="light"] .section-accent-green::before {
+  background:
+    radial-gradient(700px 320px at 50% 100%, rgba(48,209,88,0.06), transparent 60%);
+}
+
+/* ---- Prose (install / changelog pages) ---- */
+.prose p { margin-top: 12px; font-size: 15.5px; color: var(--text-dim); line-height: 1.7; }
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.prose blockquote {
+  margin: 14px 0;
+  padding: 14px 18px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 15px;
+  color: var(--text);
+}
+.prose .numbered, .prose .bulleted {
+  margin: 12px 0;
+  padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--text-dim);
+}
+.prose .numbered { list-style: decimal; }
+.prose .bulleted { list-style: disc; }
+.prose .numbered li::marker, .prose .bulleted li::marker { color: var(--accent); }
