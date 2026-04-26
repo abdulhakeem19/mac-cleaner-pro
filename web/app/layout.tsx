@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider, themeBootScript } from "@/components/ThemeProvider";
+import { MotionProvider } from "@/components/MotionProvider";
 import { PaddleScript } from "@/components/PaddleScript";
+import { RazorpayScript } from "@/components/RazorpayScript";
 import { brand, faq, pricing } from "@/content/site";
 import "./globals.css";
 
@@ -185,10 +187,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <MotionProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </MotionProvider>
         {process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID && (
           <PaddleScript vendorId={process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID} />
         )}
+        {process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID && <RazorpayScript />}
         <Script
           id="ld-json"
           type="application/ld+json"

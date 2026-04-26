@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "framer-motion";
 
 /**
  * Animated SVG progress ring. The outer arc length tracks `progress` (0..1).
@@ -40,7 +40,7 @@ export function ScanRing({
           strokeWidth={stroke}
           fill="none"
         />
-        <motion.circle
+        <m.circle
           cx={size / 2}
           cy={size / 2}
           r={r}

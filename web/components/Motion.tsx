@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
+import { m, useReducedMotion, type HTMLMotionProps } from "framer-motion";
 import {
   blurIn,
   ease,
@@ -23,7 +23,7 @@ type MotionDivProps = HTMLMotionProps<"div"> & { delay?: number };
 export function FadeUp({ delay = 0, transition, ...rest }: MotionDivProps) {
   const reduce = useReducedMotion();
   return (
-    <motion.div
+    <m.div
       variants={fadeUp}
       initial={reduce ? "show" : "hidden"}
       whileInView="show"
@@ -37,7 +37,7 @@ export function FadeUp({ delay = 0, transition, ...rest }: MotionDivProps) {
 export function FadeLeft({ delay = 0, transition, ...rest }: MotionDivProps) {
   const reduce = useReducedMotion();
   return (
-    <motion.div
+    <m.div
       variants={fadeLeft}
       initial={reduce ? "show" : "hidden"}
       whileInView="show"
@@ -51,7 +51,7 @@ export function FadeLeft({ delay = 0, transition, ...rest }: MotionDivProps) {
 export function BlurIn({ delay = 0, transition, ...rest }: MotionDivProps) {
   const reduce = useReducedMotion();
   return (
-    <motion.div
+    <m.div
       variants={blurIn}
       initial={reduce ? "show" : "hidden"}
       whileInView="show"
@@ -65,7 +65,7 @@ export function BlurIn({ delay = 0, transition, ...rest }: MotionDivProps) {
 export function ScaleUp({ delay = 0, transition, ...rest }: MotionDivProps) {
   const reduce = useReducedMotion();
   return (
-    <motion.div
+    <m.div
       variants={scaleUp}
       initial={reduce ? "show" : "hidden"}
       whileInView="show"
@@ -87,7 +87,7 @@ export function Stagger({
 }: MotionDivProps & { step?: number }) {
   const reduce = useReducedMotion();
   return (
-    <motion.div
+    <m.div
       variants={stagger(reduce ? 0 : step, reduce ? 0 : delay)}
       initial={reduce ? "show" : "hidden"}
       whileInView="show"
@@ -99,7 +99,7 @@ export function Stagger({
 
 export function StaggerItem({ transition, ...rest }: MotionDivProps) {
   return (
-    <motion.div
+    <m.div
       variants={fadeUp}
       transition={{ duration: 0.6, ease }}
       {...rest}

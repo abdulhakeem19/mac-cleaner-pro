@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
+import { m, useScroll, useTransform } from "framer-motion";
 import { PlayCircle } from "lucide-react";
 import { AppleLogo } from "./Logo";
 import Link from "next/link";
@@ -13,7 +13,6 @@ import { BlurIn, FadeUp, ScaleUp } from "./Motion";
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
-  // Parallax floats — orbs drift slower than the rest of the content.
   const { scrollY } = useScroll();
   const orbA = useTransform(scrollY, [0, 600], [0, -120]);
   const orbB = useTransform(scrollY, [0, 600], [0, -180]);
@@ -24,7 +23,7 @@ export function Hero() {
       className="section noise pt-28 md:pt-40"
       style={{ paddingBottom: 80, position: "relative" }}
     >
-      <motion.div
+      <m.div
         aria-hidden
         style={{
           position: "absolute",
@@ -35,10 +34,11 @@ export function Hero() {
           background: "radial-gradient(circle, rgba(10,132,255,0.35), transparent 70%)",
           filter: "blur(60px)",
           pointerEvents: "none",
+          willChange: "transform",
           y: orbA,
         }}
       />
-      <motion.div
+      <m.div
         aria-hidden
         style={{
           position: "absolute",
@@ -49,6 +49,7 @@ export function Hero() {
           background: "radial-gradient(circle, rgba(124,92,255,0.28), transparent 70%)",
           filter: "blur(80px)",
           pointerEvents: "none",
+          willChange: "transform",
           y: orbB,
         }}
       />
@@ -61,20 +62,19 @@ export function Hero() {
           </div>
         </BlurIn>
 
-        <FadeUp delay={1}>
-          <h1 className="h-display" style={{ maxWidth: 1000, margin: "0 auto" }}>
-            {hero.headlineTop}{" "}
-            <span className="gradient-text">{hero.headlineGradient}</span>
-            <br />
-            {hero.headlineSubPrefix}{" "}
-            <span className="mono" style={{ fontWeight: 600 }}>
-              {hero.headlineSubNum}
-            </span>{" "}
-            {hero.headlineSubAfter}
-          </h1>
-        </FadeUp>
+        {/* H1 renders immediately — no animation wrapper so LCP isn't delayed */}
+        <h1 className="h-display" style={{ maxWidth: 1000, margin: "0 auto" }}>
+          {hero.headlineTop}{" "}
+          <span className="gradient-text">{hero.headlineGradient}</span>
+          <br />
+          {hero.headlineSubPrefix}{" "}
+          <span className="mono" style={{ fontWeight: 600 }}>
+            {hero.headlineSubNum}
+          </span>{" "}
+          {hero.headlineSubAfter}
+        </h1>
 
-        <FadeUp delay={2}>
+        <FadeUp delay={1}>
           <p
             className="lede"
             style={{ margin: "24px auto 0", fontSize: 20, textAlign: "center" }}
@@ -83,7 +83,7 @@ export function Hero() {
           </p>
         </FadeUp>
 
-        <FadeUp delay={3}>
+        <FadeUp delay={2}>
           <div
             className="flex flex-col sm:flex-row justify-center flex-wrap"
             style={{ gap: 12, marginTop: 34 }}
@@ -105,7 +105,7 @@ export function Hero() {
           </div>
         </FadeUp>
 
-        <FadeUp delay={4}>
+        <FadeUp delay={3}>
           <div
             style={{
               display: "flex",
@@ -127,7 +127,7 @@ export function Hero() {
           <HeroStats />
         </div>
 
-        <ScaleUp delay={5}>
+        <ScaleUp delay={4}>
           <div style={{ marginTop: 72, perspective: 2000 }}>
             <div
               style={{
@@ -155,8 +155,8 @@ export function Hero() {
           </div>
         </ScaleUp>
 
-        <FadeUp delay={6}>
-          <motion.div
+        <FadeUp delay={5}>
+          <m.div
             className="inline-flex items-center gap-3 mt-14 px-4 py-2 rounded-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -181,7 +181,7 @@ export function Hero() {
               }}
             />
             <span>{hero.trustBlurb}</span>
-          </motion.div>
+          </m.div>
         </FadeUp>
       </div>
     </section>

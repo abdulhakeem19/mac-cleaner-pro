@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { brand } from "@/content/site";
 
 export function AppleLogo({ size = 16, className }: { size?: number; className?: string }) {
@@ -17,22 +16,28 @@ export function AppleLogo({ size = 16, className }: { size?: number; className?:
   );
 }
 
-export function LogoMark({ size = 28 }: { size?: number }) {
+export function LogoMark({ size = 28, priority = false }: { size?: number; priority?: boolean }) {
   return (
-    <Image
-      src="/mcp_logo.png"
-      alt="Mac Cleaner Pro logo"
-      width={size}
-      height={size}
-      style={{ display: "block", flexShrink: 0 }}
-    />
+    <picture style={{ display: "block", flexShrink: 0, width: size, height: size }}>
+      <source srcSet="/mcp_logo_32.webp" type="image/webp" />
+      <img
+        src="/mcp_logo_32.png"
+        alt="Mac Cleaner Pro logo"
+        width={size}
+        height={size}
+        loading={priority ? "eager" : "lazy"}
+        decoding={priority ? "sync" : "async"}
+        fetchPriority={priority ? "high" : undefined}
+        style={{ display: "block", width: "100%", height: "100%" }}
+      />
+    </picture>
   );
 }
 
-export function LogoLockup({ logoSize = 32, showName = false }: { logoSize?: number; showName?: boolean }) {
+export function LogoLockup({ logoSize = 32, showName = false, priority = false }: { logoSize?: number; showName?: boolean; priority?: boolean }) {
   return (
     <div className="flex items-center gap-1.5 font-semibold tracking-tight">
-      <LogoMark size={logoSize} />
+      <LogoMark size={logoSize} priority={priority} />
       <span className={showName ? undefined : "hidden md:inline"}>{brand.name}</span>
     </div>
   );

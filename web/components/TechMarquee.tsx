@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { m, useReducedMotion } from "framer-motion";
 
 const ITEMS = [
   "Swift 5.10",
@@ -41,7 +41,7 @@ export function TechMarquee() {
           "linear-gradient(90deg, transparent, black 10%, black 90%, transparent)",
       }}
     >
-      <motion.div
+      <m.div
         className="flex items-center gap-12 whitespace-nowrap"
         animate={reduce ? undefined : { x: ["0%", "-50%"] }}
         transition={{
@@ -74,7 +74,7 @@ export function TechMarquee() {
             {it}
           </span>
         ))}
-      </motion.div>
+      </m.div>
     </section>
   );
 }

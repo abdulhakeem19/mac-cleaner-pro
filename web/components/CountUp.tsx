@@ -2,7 +2,7 @@
 
 import {
   animate,
-  motion,
+  m,
   useInView,
   useMotionValue,
   useReducedMotion,
@@ -10,11 +10,6 @@ import {
 } from "framer-motion";
 import { useEffect, useRef } from "react";
 
-/**
- * Counts from 0 to `to` once the component scrolls into view.
- * `decimals` controls fractional digits (e.g. 6.36 → decimals=2).
- * `suffix` is appended to the rendered number.
- */
 export function CountUp({
   to,
   decimals = 0,
@@ -45,5 +40,5 @@ export function CountUp({
     return () => controls.stop();
   }, [inView, to, duration, mv, reduce]);
 
-  return <motion.span ref={ref}>{text}</motion.span>;
+  return <m.span ref={ref}>{text}</m.span>;
 }

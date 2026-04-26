@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, m, useScroll, useTransform } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -40,7 +40,7 @@ export function Nav() {
   const close = () => setIsOpen(false);
 
   return (
-    <motion.div
+    <m.div
       ref={containerRef}
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -57,7 +57,7 @@ export function Nav() {
       role="navigation"
     >
       {/* Pill bar — always stays a pill */}
-      <motion.div
+      <m.div
         style={{
           ...glassStyle,
           display: "flex",
@@ -72,7 +72,7 @@ export function Nav() {
         }}
       >
         <Link href="/" style={{ textDecoration: "none", color: "inherit", whiteSpace: "nowrap" }} onClick={close}>
-          <LogoLockup showName logoSize={26} />
+          <LogoLockup showName logoSize={26} priority />
         </Link>
 
         {/* Desktop nav links */}
@@ -128,7 +128,7 @@ export function Nav() {
           >
             <AnimatePresence mode="wait" initial={false}>
               {isOpen ? (
-                <motion.span
+                <m.span
                   key="x"
                   initial={{ rotate: -90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
@@ -137,9 +137,9 @@ export function Nav() {
                   style={{ display: "flex" }}
                 >
                   <X size={16} />
-                </motion.span>
+                </m.span>
               ) : (
-                <motion.span
+                <m.span
                   key="menu"
                   initial={{ rotate: 90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
@@ -148,17 +148,17 @@ export function Nav() {
                   style={{ display: "flex" }}
                 >
                   <Menu size={16} />
-                </motion.span>
+                </m.span>
               )}
             </AnimatePresence>
           </button>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Mobile dropdown — separate card, pill never morphs */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             key="mobile-menu"
             initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -176,7 +176,7 @@ export function Nav() {
             {/* Staggered nav links */}
             <div className="flex flex-col gap-0.5">
               {nav.links.map((l, i) => (
-                <motion.div
+                <m.div
                   key={l.h}
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -190,7 +190,7 @@ export function Nav() {
                   >
                     {l.l}
                   </Link>
-                </motion.div>
+                </m.div>
               ))}
             </div>
 
@@ -198,7 +198,7 @@ export function Nav() {
             <div style={{ height: 1, background: "var(--border)", margin: "12px 0" }} />
 
             {/* CTA buttons */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: nav.links.length * 0.04 + 0.05, duration: 0.2, ease: "easeOut" }}
@@ -221,10 +221,10 @@ export function Nav() {
                 <AppleLogo size={14} />
                 Download for Mac
               </Link>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </m.div>
   );
 }

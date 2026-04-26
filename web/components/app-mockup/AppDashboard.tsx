@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import {
   Sparkles,
   Search,
@@ -91,7 +91,7 @@ export function AppDashboard() {
 
         <div className="flex flex-col gap-2">
           {rules.map((r, i) => (
-            <motion.div
+            <m.div
               key={i}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -154,7 +154,7 @@ export function AppDashboard() {
               >
                 {r.size}
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
 

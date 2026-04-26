@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { smartScanDemo } from "@/content/site";
 import { BlurIn, FadeLeft, FadeUp } from "./Motion";
@@ -121,7 +121,7 @@ export function SmartScanDemo() {
                 {steps.map((s, i) => {
                   const state = i < step ? "done" : i === step ? "active" : "pending";
                   return (
-                    <motion.div
+                    <m.div
                       key={i}
                       animate={{
                         backgroundColor:
@@ -161,24 +161,24 @@ export function SmartScanDemo() {
                       >
                         <AnimatePresence mode="wait">
                           {state === "done" && (
-                            <motion.span
+                            <m.span
                               key="done"
                               initial={{ scale: 0.5, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
                               exit={{ opacity: 0 }}
                             >
                               ✓
-                            </motion.span>
+                            </m.span>
                           )}
                           {state === "active" && (
-                            <motion.span
+                            <m.span
                               key="active"
                               animate={{ rotate: 360 }}
                               transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
                               style={{ display: "inline-block" }}
                             >
                               ⟳
-                            </motion.span>
+                            </m.span>
                           )}
                         </AnimatePresence>
                       </div>
@@ -206,7 +206,7 @@ export function SmartScanDemo() {
                       >
                         {state === "pending" ? "—" : s.found}
                       </div>
-                    </motion.div>
+                    </m.div>
                   );
                 })}
               </div>

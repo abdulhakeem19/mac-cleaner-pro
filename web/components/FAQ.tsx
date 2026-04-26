@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { faq } from "@/content/site";
@@ -69,7 +69,7 @@ export function FAQ() {
                   </button>
                   <AnimatePresence initial={false}>
                     {o && (
-                      <motion.div
+                      <m.div
                         key="content"
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
@@ -87,7 +87,7 @@ export function FAQ() {
                         >
                           {it.a}
                         </div>
-                      </motion.div>
+                      </m.div>
                     )}
                   </AnimatePresence>
                 </div>

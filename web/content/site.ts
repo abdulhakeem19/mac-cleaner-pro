@@ -180,6 +180,8 @@ export const security = {
 
 const PADDLE_PRO    = process.env.NEXT_PUBLIC_PADDLE_PRO_PRODUCT    ?? null;
 const PADDLE_FAMILY = process.env.NEXT_PUBLIC_PADDLE_FAMILY_PRODUCT ?? null;
+// Razorpay: only the public key ID goes in the browser; key_secret stays in the Netlify function
+const RAZORPAY_KEY  = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID       ?? null;
 
 /** Pricing — USD + INR. Numbers match LicenseManager trial length. */
 export const pricing = {
@@ -203,6 +205,7 @@ export const pricing = {
       cta: "Download free",
       primary: false,
       paddleProductId: null as string | null,
+      razorpayPlan: null as string | null,
       feats: [
         "Smart Scan (preview)",
         "Clean up to 500 MB / month",
@@ -224,6 +227,7 @@ export const pricing = {
       primary: true,
       tag: "Most popular",
       paddleProductId: PADDLE_PRO as string | null,
+      razorpayPlan: RAZORPAY_KEY ? "pro" : null,
       feats: [
         "Unlimited Smart Scan & cleanup",
         "Large & Old Files",
@@ -246,6 +250,7 @@ export const pricing = {
       cta: "Get the Family plan",
       primary: false,
       paddleProductId: PADDLE_FAMILY as string | null,
+      razorpayPlan: RAZORPAY_KEY ? "family" : null,
       feats: [
         "Everything in Pro",
         "Up to 5 Macs on one license",

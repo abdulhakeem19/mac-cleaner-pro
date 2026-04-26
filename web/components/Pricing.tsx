@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGroup, motion } from "framer-motion";
+import { LayoutGroup, m } from "framer-motion";
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { pricing } from "@/content/site";
@@ -44,9 +44,45 @@ const LANG_LABEL: Record<IndicLang, string> = {
   ta: "தமிழ்",
 };
 
+async function openRazorpay(planKey: string, planName: string) {
+  if (typeof window === "undefined" || !window.Razorpay) return false;
+  try {
+    const res = await fetch("/.netlify/functions/razorpay-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan: planKey }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const rzp = new window.Razorpay({
+      key: data.keyId,
+      amount: data.amount,
+      currency: data.currency,
+      name: "Mac Cleaner Pro",
+      description: planName,
+      order_id: data.orderId,
+      theme: { color: "#7C5CFF" },
+      handler(response) {
+        // Payment captured — send user to a thank-you page
+        const params = new URLSearchParams({
+          payment_id: response.razorpay_payment_id,
+          order_id:   response.razorpay_order_id,
+          plan:       planKey,
+        });
+        window.location.href = `/thank-you/?${params}`;
+      },
+    });
+    rzp.open();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function Pricing() {
   const [currency, setCurrency] = useState<Currency>("USD");
   const [lang, setLang] = useState<IndicLang>("en");
+  const [loading, setLoading] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrency(detectCurrency());
@@ -139,7 +175,7 @@ export function Pricing() {
                     }}
                   >
                     {currency === c && (
-                      <motion.span
+                      <m.span
                         layoutId="currency-pill"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                         style={{
@@ -227,7 +263,7 @@ export function Pricing() {
                         }}
                       >
                         {lang === l && (
-                          <motion.span
+                          <m.span
                             layoutId="indic-pill"
                             transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                             style={{
@@ -342,26 +378,40 @@ export function Pricing() {
                 <p style={{ fontSize: 14, marginTop: 10 }}>{p.desc}</p>
                 <button
                   className={p.primary ? "btn btn-primary" : "btn btn-secondary"}
+                  disabled={loading === p.key}
                   style={{
                     width: "100%",
                     justifyContent: "center",
                     marginTop: 22,
                     padding: "12px 16px",
+                    opacity: loading === p.key ? 0.7 : 1,
+                    cursor: loading === p.key ? "wait" : "pointer",
                   }}
-                  onClick={() => {
+                  onClick={async () => {
                     if (p.key === "free") {
                       window.location.href = "/download/";
                       return;
                     }
-                    const pid = p.paddleProductId;
-                    if (pid && typeof window !== "undefined" && window.Paddle) {
-                      window.Paddle.Checkout.open({ product: pid });
-                    } else {
-                      window.location.href = "/pricing/";
+                    setLoading(p.key);
+                    try {
+                      // India (INR) → Razorpay
+                      if (currency === "INR" && p.razorpayPlan) {
+                        const ok = await openRazorpay(p.razorpayPlan, p.name);
+                        if (ok) return;
+                      }
+                      // International (USD) → Paddle
+                      if (p.paddleProductId && typeof window !== "undefined" && window.Paddle) {
+                        window.Paddle.Checkout.open({ product: p.paddleProductId });
+                        return;
+                      }
+                      // Fallback — neither gateway configured
+                      window.location.href = "mailto:support@maccleanerpro.com?subject=Purchase%20Mac%20Cleaner%20Pro";
+                    } finally {
+                      setLoading(null);
                     }
                   }}
                 >
-                  {p.cta}
+                  {loading === p.key ? "Opening checkout…" : p.cta}
                 </button>
                 <div
                   style={{
