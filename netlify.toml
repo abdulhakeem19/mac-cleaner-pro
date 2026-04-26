@@ -1,0 +1,58 @@
+[build]
+  base    = "web"
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# --------------------------------------------------------------------------
+# Security headers — applied to every response
+# --------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options           = "DENY"
+    X-Content-Type-Options    = "nosniff"
+    X-XSS-Protection          = "1; mode=block"
+    Referrer-Policy           = "strict-origin-when-cross-origin"
+    Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+
+# --------------------------------------------------------------------------
+# Cache: immutable Next.js chunks (content-hashed filenames)
+# --------------------------------------------------------------------------
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# --------------------------------------------------------------------------
+# Cache: static assets in /public
+# --------------------------------------------------------------------------
+[[headers]]
+  for = "/mcp_logo.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/download/*.dmg"
+  [headers.values]
+    Cache-Control          = "public, max-age=3600"
+    Content-Type           = "application/octet-stream"
+    Content-Disposition    = "attachment"
+
+# --------------------------------------------------------------------------
+# Redirects
+# --------------------------------------------------------------------------
+# Download page: also reachable at /download (without trailing slash)
+[[redirects]]
+  from   = "/download"
+  to     = "/download/"
+  status = 301
+
+# Paddle webhook placeholder (wire up when account is approved)
+# [[redirects]]
+#   from   = "/api/paddle-webhook"
+#   to     = "/.netlify/functions/paddle-webhook"
+#   status = 200
