@@ -28,7 +28,7 @@ export const hero = {
   description:
     "A privacy-first performance analyzer & system cleaner, written in native Swift. No telemetry, no cloud uploads, no subscription. Just deep macOS integration and a single click.",
   primaryCta: { label: "Download free · for macOS", href: "/download/" },
-  secondaryCta: { label: "Watch Smart Scan", href: "#scan" },
+  secondaryCta: { label: "Watch Smart Scan", href: "/#scan" },
   bullets: [
     "14-day free trial",
     "Universal binary · Apple Silicon + Intel",
@@ -335,7 +335,7 @@ export const footerCta = {
   titleGradient: "Get a faster Mac tonight.",
   body: "14 days free. Then $39 once. That's it.",
   primary: { label: "Download for macOS", href: "/download/" },
-  secondary: { label: "See pricing", href: "#pricing" },
+  secondary: { label: "See pricing", href: "/pricing/" },
 } as const;
 
 export const footer = {
@@ -368,7 +368,7 @@ export const nav = {
   links: [
     { l: "Features", h: "/#features" },
     { l: "Smart Scan", h: "/#scan" },
-    { l: "Pricing", h: "/#pricing" },
+    { l: "Pricing", h: "/pricing/" },
     { l: "FAQ", h: "/#faq" },
     { l: "Install", h: "/install/" },
   ],

@@ -6,9 +6,9 @@ import { brand } from "@/content/site";
 import { Mail, MessageSquare, ShieldCheck, Zap } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Contact",
+  title: "Contact Mac Cleaner Pro — Support, Sales & Feedback",
   description:
-    "Get in touch with the Mac Cleaner Pro team — support, sales, press, partnerships.",
+    "Get help with Mac Cleaner Pro. Email us for support, license questions, bug reports, or feature requests. Fast response from the indie dev team.",
   alternates: { canonical: `https://${brand.domain}/contact/` },
 };
 

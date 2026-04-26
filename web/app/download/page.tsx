@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Downloading Mac Cleaner Pro",
   description: "Your download of Mac Cleaner Pro is starting automatically.",
   alternates: { canonical: `https://${brand.domain}/download/` },
+  robots: { index: false, follow: false },
 };
 
 const DMG = `/download/MacCleanerPro-${brand.version}.dmg`;

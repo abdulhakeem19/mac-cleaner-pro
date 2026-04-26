@@ -22,12 +22,14 @@ export function Footer() {
         >
           <div>
             <div style={{ marginBottom: 14 }}>
-              <LogoLockup />
+              <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
+                <LogoLockup />
+              </Link>
             </div>
             <p style={{ fontSize: 14, maxWidth: 280 }}>{footer.blurb}</p>
             <div className="flex gap-2.5 mt-5">
               <Link
-                href="#download"
+                href="/download/"
                 className="btn btn-secondary"
                 style={{ padding: "10px 14px", fontSize: 13 }}
               >

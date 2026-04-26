@@ -5,9 +5,9 @@ import { Pricing } from "@/components/Pricing";
 import { brand } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "Mac Cleaner Pro Pricing — $39 Pay-Once, No Subscription",
   description:
-    "Mac Cleaner Pro is pay-once — $39 for Pro, $69 for Family. 14-day free trial, 30-day refund guarantee. No subscription, ever.",
+    "Mac Cleaner Pro costs $39 once for Pro (1 Mac) or $69 for Family (5 Macs). No subscription, no renewal. 14-day free trial and 30-day money-back guarantee. Cheaper than CleanMyMac subscription.",
   alternates: { canonical: `https://${brand.domain}/pricing/` },
 };
 

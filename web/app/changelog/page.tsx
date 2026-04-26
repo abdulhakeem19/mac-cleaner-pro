@@ -5,9 +5,9 @@ import { Nav } from "@/components/Nav";
 import { brand } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Changelog · Built in public",
+  title: "Mac Cleaner Pro Changelog — What's New & What's Coming",
   description:
-    "Every milestone from spec to ship — visible. Mac Cleaner Pro built-in-public version log.",
+    "Follow the Mac Cleaner Pro built-in-public development log. Every milestone from spec to ship — smart scan, large file finder, app uninstaller, and more.",
   alternates: { canonical: `https://${brand.domain}/changelog/` },
 };
 

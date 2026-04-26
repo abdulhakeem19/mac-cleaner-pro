@@ -4,9 +4,9 @@ import { Nav } from "@/components/Nav";
 import { brand } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Install Mac Cleaner Pro on macOS",
+  title: "How to Install Mac Cleaner Pro on macOS — Step-by-Step Guide",
   description:
-    "Drag-to-Applications, first-launch right-click → Open, Full Disk Access. Step-by-step install guide for v1.0.",
+    "Install Mac Cleaner Pro on macOS Ventura, Sonoma, or Sequoia. Drag to Applications, grant Full Disk Access, right-click Open to bypass Gatekeeper. Takes under 2 minutes.",
   alternates: { canonical: `https://${brand.domain}/install/` },
 };
 

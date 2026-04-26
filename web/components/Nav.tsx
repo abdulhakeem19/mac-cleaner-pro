@@ -48,7 +48,9 @@ export function Nav() {
         boxShadow: shadow,
       }}
     >
-      <LogoLockup />
+      <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
+        <LogoLockup />
+      </Link>
       <div className="hidden md:flex gap-1.5 items-center text-sm" style={{ color: "var(--text-dim)" }}>
         {nav.links.map((l) => (
           <Link
@@ -64,14 +66,14 @@ export function Nav() {
       <div className="flex gap-2 items-center">
         <ThemeToggle />
         <Link
-          href="#pricing"
+          href="/pricing/"
           className="btn btn-ghost hidden sm:inline-flex"
           style={{ fontSize: 13, padding: "8px 14px" }}
         >
           License
         </Link>
         <Link
-          href="#download"
+          href="/download/"
           className="btn btn-primary"
           style={{ fontSize: 13, padding: "8px 14px" }}
         >
