@@ -36,7 +36,7 @@ export function Footer() {
                 <AppleLogo size={14} /> Download
               </Link>
               <Link
-                href="https://github.com"
+                href="https://github.com/abdulhakeem19/maccleanerpro"
                 className="btn btn-ghost"
                 style={{ padding: "10px 14px", fontSize: 13 }}
               >
