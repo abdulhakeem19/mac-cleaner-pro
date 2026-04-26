@@ -18,7 +18,7 @@ export function ScanRing({
   sub?: string;
 }) {
   const reduce = useReducedMotion();
-  const stroke = 6;
+  const stroke = 9;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = c * Math.max(0, Math.min(1, progress));
@@ -60,7 +60,7 @@ export function ScanRing({
         style={{ fontFamily: "var(--font-mono)" }}
       >
         <div
-          style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em" }}
+          style={{ fontSize: size * 0.115, fontWeight: 600, letterSpacing: "-0.02em", lineHeight: 1 }}
         >
           {label}
         </div>
