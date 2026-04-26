@@ -13,7 +13,7 @@ export function HonestyCard() {
     <section className="section" style={{ paddingTop: 40, paddingBottom: 40 }}>
       <div className="container-x">
         <FadeUp>
-          <div className="glass relative overflow-hidden" style={{ padding: 40 }}>
+          <div className="glass relative overflow-hidden px-5 py-8 md:p-10">
             <div
               aria-hidden
               style={{

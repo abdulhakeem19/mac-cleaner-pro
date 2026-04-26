@@ -28,7 +28,7 @@ export function NativeEdge() {
 
         <Stagger className="grid gap-7 md:grid-cols-2" step={0.1}>
           <StaggerItem>
-            <div className="glass" style={{ padding: 32 }}>
+            <div className="glass px-4 py-6 md:p-8">
               <div
                 style={{
                   fontSize: 13,
@@ -42,7 +42,7 @@ export function NativeEdge() {
               </div>
               <div className="flex flex-col gap-3.5">
                 {nativeEdge.underTheHood.map((r, i) => (
-                  <div key={i} className="flex gap-4 items-start">
+                  <div key={i} className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
                     <div
                       className="mono"
                       style={{
@@ -53,8 +53,10 @@ export function NativeEdge() {
                         padding: "4px 10px",
                         borderRadius: 6,
                         minWidth: 110,
+                        width: "fit-content",
                         textAlign: "center",
                         fontWeight: 600,
+                        flexShrink: 0,
                       }}
                     >
                       {r.k}
@@ -63,7 +65,7 @@ export function NativeEdge() {
                       style={{
                         fontSize: 14,
                         color: "var(--text-dim)",
-                        paddingTop: 4,
+                        paddingTop: 2,
                       }}
                     >
                       {r.v}
@@ -74,7 +76,7 @@ export function NativeEdge() {
             </div>
           </StaggerItem>
           <StaggerItem>
-            <div className="glass" style={{ padding: 32 }}>
+            <div className="glass px-4 py-6 md:p-8">
               <div
                 style={{
                   fontSize: 13,
@@ -86,66 +88,34 @@ export function NativeEdge() {
               >
                 What we measured
               </div>
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: "1.4fr 1fr 1fr",
-                  fontSize: 13,
-                }}
-              >
-                <div
-                  style={{
-                    color: "var(--text-muted)",
-                    padding: "12px 0",
-                    borderBottom: "1px solid var(--border)",
-                  }}
-                >
-                  Metric
-                </div>
-                <div
-                  style={{
-                    color: "var(--accent)",
-                    padding: "12px 0",
-                    borderBottom: "1px solid var(--border)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Mac Cleaner Pro
-                </div>
-                <div
-                  style={{
-                    color: "var(--text-muted)",
-                    padding: "12px 0",
-                    borderBottom: "1px solid var(--border)",
-                  }}
-                >
-                  Industry default
-                </div>
+              {/* Mobile: 2-col (metric + our value). sm+: 3-col (adds industry default) */}
+              <div className="grid" style={{ fontSize: 13, gridTemplateColumns: "1.4fr 1fr" }}>
+                <div style={{ color: "var(--text-muted)", padding: "12px 0", borderBottom: "1px solid var(--border)" }}>Metric</div>
+                <div style={{ color: "var(--accent)", padding: "12px 0", borderBottom: "1px solid var(--border)", fontWeight: 600 }}>Mac Cleaner Pro</div>
                 {nativeEdge.facts.map((c, i) => {
                   const last = i === nativeEdge.facts.length - 1;
-                  const cell = {
-                    padding: "14px 0",
-                    borderBottom: last ? "none" : "1px solid var(--border)",
-                  };
+                  const cell = { padding: "14px 0", borderBottom: last ? "none" : "1px solid var(--border)" };
                   return (
                     <div key={i} className="contents">
                       <div style={cell}>{c.feat}</div>
-                      <div
-                        className="mono"
-                        style={{
-                          ...cell,
-                          color: "var(--ok)",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {c.us}
-                      </div>
-                      <div
-                        className="mono"
-                        style={{ ...cell, color: "var(--text-muted)" }}
-                      >
-                        {c.them}
-                      </div>
+                      <div className="mono" style={{ ...cell, color: "var(--ok)", fontWeight: 600 }}>{c.us}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* sm+: also show industry default as a third column */}
+              <div className="hidden sm:grid mt-4 pt-4" style={{ fontSize: 13, gridTemplateColumns: "1.4fr 1fr 1fr", borderTop: "1px solid var(--border)" }}>
+                <div style={{ color: "var(--text-muted)", padding: "8px 0", fontWeight: 600 }}>Metric</div>
+                <div style={{ color: "var(--accent)", padding: "8px 0", fontWeight: 600 }}>Mac Cleaner Pro</div>
+                <div style={{ color: "var(--text-muted)", padding: "8px 0" }}>Industry default</div>
+                {nativeEdge.facts.map((c, i) => {
+                  const last = i === nativeEdge.facts.length - 1;
+                  const cell = { padding: "14px 0", borderBottom: last ? "none" : "1px solid var(--border)" };
+                  return (
+                    <div key={i} className="contents">
+                      <div style={cell}>{c.feat}</div>
+                      <div className="mono" style={{ ...cell, color: "var(--ok)", fontWeight: 600 }}>{c.us}</div>
+                      <div className="mono" style={{ ...cell, color: "var(--text-muted)" }}>{c.them}</div>
                     </div>
                   );
                 })}

@@ -11,9 +11,8 @@ export function FooterCTA() {
       <div className="container-x">
         <FadeUp>
           <div
-            className="glass relative overflow-hidden text-center"
+            className="glass relative overflow-hidden text-center px-6 py-10 md:px-14 md:py-18"
             style={{
-              padding: "72px 56px",
               borderColor: "var(--accent-ring)",
             }}
           >

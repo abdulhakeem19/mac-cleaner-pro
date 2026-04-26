@@ -29,11 +29,11 @@ export function LogoMark({ size = 28 }: { size?: number }) {
   );
 }
 
-export function LogoLockup({ logoSize = 40 }: { logoSize?: number }) {
+export function LogoLockup({ logoSize = 32, showName = false }: { logoSize?: number; showName?: boolean }) {
   return (
     <div className="flex items-center gap-1.5 font-semibold tracking-tight">
       <LogoMark size={logoSize} />
-      <span>{brand.name}</span>
+      <span className={showName ? undefined : "hidden md:inline"}>{brand.name}</span>
     </div>
   );
 }

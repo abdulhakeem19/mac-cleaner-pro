@@ -64,8 +64,7 @@ export function FeaturesGrid() {
           {featuresGrid.groups.map((g, gi) => (
             <FadeUp key={gi}>
               <div
-                className="glass relative overflow-hidden"
-                style={{ padding: 36 }}
+                className="glass relative overflow-hidden px-4 py-6 md:p-9"
               >
                 <div
                   aria-hidden

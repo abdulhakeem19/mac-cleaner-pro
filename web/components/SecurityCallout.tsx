@@ -10,8 +10,7 @@ export function SecurityCallout() {
       <div className="container-x">
         <FadeUp>
           <div
-            className="glass relative overflow-hidden"
-            style={{ padding: 48 }}
+            className="glass relative overflow-hidden px-5 py-8 md:px-12 md:py-12"
           >
             <div
               aria-hidden

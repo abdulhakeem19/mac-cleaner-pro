@@ -77,7 +77,7 @@ export function SmartScanDemo() {
           </div>
 
           <FadeLeft>
-            <div className="glass relative overflow-hidden" style={{ padding: 28 }}>
+            <div className="glass relative overflow-hidden px-4 py-5 md:p-7">
               <div className="flex items-start justify-between mb-5">
                 <div>
                   <div

@@ -17,10 +17,9 @@ export function Footer() {
     >
       <div className="container-x">
         <div
-          className="grid mb-12 gap-10"
-          style={{ gridTemplateColumns: "1.4fr repeat(3, 1fr)" }}
+          className="grid mb-12 gap-10 grid-cols-2 md:grid-cols-4"
         >
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <div style={{ marginBottom: 14 }}>
               <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
                 <LogoLockup />

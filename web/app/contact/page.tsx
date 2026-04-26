@@ -41,8 +41,8 @@ export default function ContactPage() {
     <>
       <Nav />
       <main
-        className="container-x"
-        style={{ maxWidth: 980, paddingTop: 140, paddingBottom: 120 }}
+        className="container-x pt-24 pb-20 md:pt-36 md:pb-28"
+        style={{ maxWidth: 980 }}
       >
         <div className="text-center mb-12">
           <div className="eyebrow" style={{ marginBottom: 20 }}>

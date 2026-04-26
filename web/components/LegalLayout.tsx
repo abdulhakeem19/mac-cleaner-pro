@@ -21,8 +21,8 @@ export function LegalLayout({
     <>
       <Nav />
       <main
-        className="container-x"
-        style={{ maxWidth: 800, paddingTop: 140, paddingBottom: 120 }}
+        className="container-x pt-24 pb-20 md:pt-36 md:pb-28"
+        style={{ maxWidth: 800 }}
       >
         <div className="eyebrow" style={{ marginBottom: 20 }}>
           <span className="eyebrow-dot" />

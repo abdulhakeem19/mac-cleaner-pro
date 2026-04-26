@@ -15,7 +15,7 @@ export default function PricingPage() {
   return (
     <>
       <Nav />
-      <main style={{ paddingTop: 100, paddingBottom: 40 }}>
+      <main className="pt-24 md:pt-32" style={{ paddingBottom: 40 }}>
         <Pricing />
       </main>
       <Footer />

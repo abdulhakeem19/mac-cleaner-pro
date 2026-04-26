@@ -15,7 +15,7 @@ export default function ChangelogPage() {
   return (
     <>
       <Nav />
-      <main style={{ paddingTop: 100 }}>
+      <main className="pt-24 md:pt-32">
         <BuiltInPublicTimeline />
       </main>
       <Footer />

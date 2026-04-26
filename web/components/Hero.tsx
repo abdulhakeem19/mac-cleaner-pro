@@ -21,8 +21,8 @@ export function Hero() {
   return (
     <section
       ref={ref}
-      className="section noise"
-      style={{ paddingTop: 160, paddingBottom: 80, position: "relative" }}
+      className="section noise pt-28 md:pt-40"
+      style={{ paddingBottom: 80, position: "relative" }}
     >
       <motion.div
         aria-hidden
@@ -85,13 +85,8 @@ export function Hero() {
 
         <FadeUp delay={3}>
           <div
-            style={{
-              display: "flex",
-              gap: 12,
-              justifyContent: "center",
-              marginTop: 34,
-              flexWrap: "wrap",
-            }}
+            className="flex flex-col sm:flex-row justify-center flex-wrap"
+            style={{ gap: 12, marginTop: 34 }}
           >
             <Link
               href={hero.primaryCta.href}
