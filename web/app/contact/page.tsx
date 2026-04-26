@@ -17,18 +17,21 @@ const channels = [
     icon: MessageSquare,
     label: "General",
     email: "hello@maccleanerpro.com",
+    subject: "[General]",
     desc: "Anything that isn't an active support ticket — feedback, ideas, partnerships, press.",
   },
   {
     icon: ShieldCheck,
     label: "Support",
     email: "hello@maccleanerpro.com",
+    subject: "[Support]",
     desc: "Bugs, license issues, refund requests. Include your order ID for fastest routing.",
   },
   {
     icon: Zap,
-    label: "Beta program",
+    label: "Beta Program",
     email: "hello@maccleanerpro.com",
+    subject: "[Beta]",
     desc: "Early-access testers — bug reports, weekly build feedback, feature requests.",
   },
 ];
@@ -52,13 +55,28 @@ export default function ContactPage() {
           </p>
         </div>
 
+        {/* Hidden form — Netlify scrapes this at build time to register the form */}
+        <form name="contact" data-netlify="true" hidden>
+          <input type="hidden" name="form-name" value="contact" />
+          <input type="text" name="name" />
+          <input type="email" name="email" />
+          <select name="topic">
+            <option value="general" />
+            <option value="support" />
+            <option value="license" />
+            <option value="press" />
+            <option value="beta" />
+          </select>
+          <textarea name="message" />
+        </form>
+
         <div className="grid gap-5 md:grid-cols-3 mb-10">
           {channels.map((c) => {
             const Ic = c.icon;
             return (
               <a
-                key={c.email}
-                href={`mailto:${c.email}`}
+                key={c.label}
+                href={`mailto:${c.email}?subject=${encodeURIComponent(c.subject)}`}
                 className="glass block transition-transform hover:-translate-y-0.5"
                 style={{ padding: 24 }}
               >

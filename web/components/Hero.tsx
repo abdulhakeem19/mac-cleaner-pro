@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Apple, PlayCircle } from "lucide-react";
+import { PlayCircle } from "lucide-react";
+import { AppleLogo } from "./Logo";
 import Link from "next/link";
 import { useRef } from "react";
 import { hero } from "@/content/site";
@@ -97,7 +98,7 @@ export function Hero() {
               className="btn btn-primary"
               style={{ padding: "14px 24px", fontSize: 16 }}
             >
-              <Apple size={16} /> {hero.primaryCta.label}
+              <AppleLogo size={16} /> {hero.primaryCta.label}
             </Link>
             <Link
               href={hero.secondaryCta.href}

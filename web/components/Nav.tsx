@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Apple } from "lucide-react";
 import Link from "next/link";
-import { LogoLockup } from "./Logo";
+import { AppleLogo, LogoLockup } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { nav } from "@/content/site";
 
@@ -75,7 +75,7 @@ export function Nav() {
           className="btn btn-primary"
           style={{ fontSize: 13, padding: "8px 14px" }}
         >
-          <Apple size={14} /> Download
+          <AppleLogo size={14} /> Download
         </Link>
       </div>
     </motion.nav>

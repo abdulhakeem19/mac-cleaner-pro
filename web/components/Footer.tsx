@@ -1,6 +1,7 @@
 "use client";
 
-import { Apple, Github } from "lucide-react";
+import { Github } from "lucide-react";
+import { AppleLogo } from "./Logo";
 import Link from "next/link";
 import { footer } from "@/content/site";
 import { LogoLockup } from "./Logo";
@@ -30,7 +31,7 @@ export function Footer() {
                 className="btn btn-secondary"
                 style={{ padding: "10px 14px", fontSize: 13 }}
               >
-                <Apple size={14} /> Download
+                <AppleLogo size={14} /> Download
               </Link>
               <Link
                 href="https://github.com"

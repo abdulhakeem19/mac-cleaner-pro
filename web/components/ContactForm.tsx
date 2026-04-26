@@ -1,6 +1,6 @@
 "use client";
 
-import { Send } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 const TOPICS = [
@@ -11,36 +11,51 @@ const TOPICS = [
   { v: "beta", l: "Beta program" },
 ] as const;
 
-/**
- * Static-export-safe contact form. We don't run a server, so submitting opens
- * the user's mail client with a pre-filled message. Works on every device,
- * forwards reliably, and there's no spam-form-api dependency to maintain.
- *
- * If we want true async submission later, swap this for a Formspree / Resend
- * action URL — the field names are already shaped for that.
- */
 export function ContactForm() {
   const [topic, setTopic] = useState<(typeof TOPICS)[number]["v"]>("general");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [body, setBody] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    const t = TOPICS.find((x) => x.v === topic)?.l ?? "General question";
-    const subject = `[${t}] from ${name || "Mac Cleaner Pro user"}`;
-    const lines = [
-      `From: ${name || "(no name)"}`,
-      "",
-      body,
-      "",
-      "—",
-      "Sent from maccleanerpro.com/contact",
-    ];
-    const url = `mailto:hello@maccleanerpro.com?subject=${encodeURIComponent(
-      subject,
-    )}&body=${encodeURIComponent(lines.join("\n"))}`;
-    window.location.href = url;
+    setStatus("sending");
+    try {
+      const payload = new URLSearchParams({
+        "form-name": "contact",
+        name,
+        email,
+        topic,
+        message: body,
+      });
+      const res = await fetch("/contact/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: payload.toString(),
+      });
+      setStatus(res.ok ? "done" : "error");
+    } catch {
+      setStatus("error");
+    }
   };
+
+  if (status === "done") {
+    return (
+      <div
+        className="flex flex-col items-center gap-4 py-12 text-center"
+        style={{ color: "var(--ok)" }}
+      >
+        <CheckCircle2 size={40} strokeWidth={1.5} />
+        <div>
+          <p style={{ fontSize: 18, fontWeight: 600, color: "var(--text)" }}>Message sent!</p>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 6 }}>
+            We'll reply within one business day.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const fieldStyle = {
     width: "100%",
@@ -66,20 +81,30 @@ export function ContactForm() {
             style={fieldStyle}
           />
         </Field>
-        <Field label="Topic">
-          <select
-            value={topic}
-            onChange={(e) => setTopic(e.target.value as typeof topic)}
+        <Field label="Email">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
             style={fieldStyle}
-          >
-            {TOPICS.map((t) => (
-              <option key={t.v} value={t.v}>
-                {t.l}
-              </option>
-            ))}
-          </select>
+          />
         </Field>
       </div>
+      <Field label="Topic">
+        <select
+          value={topic}
+          onChange={(e) => setTopic(e.target.value as typeof topic)}
+          style={fieldStyle}
+        >
+          {TOPICS.map((t) => (
+            <option key={t.v} value={t.v}>
+              {t.l}
+            </option>
+          ))}
+        </select>
+      </Field>
       <Field label="Message">
         <textarea
           value={body}
@@ -92,14 +117,18 @@ export function ContactForm() {
       </Field>
       <div className="flex gap-3 items-center justify-between flex-wrap">
         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          We reply within one business day. No mailing list, no autoresponder.
+          {status === "error"
+            ? "Something went wrong — please try again."
+            : "We reply within one business day. No mailing list, no autoresponder."}
         </div>
         <button
           type="submit"
+          disabled={status === "sending"}
           className="btn btn-primary"
-          style={{ padding: "12px 22px", fontSize: 14 }}
+          style={{ padding: "12px 22px", fontSize: 14, opacity: status === "sending" ? 0.6 : 1 }}
         >
-          <Send size={14} /> Send via email
+          <Send size={14} />
+          {status === "sending" ? "Sending…" : "Send message"}
         </button>
       </div>
     </form>

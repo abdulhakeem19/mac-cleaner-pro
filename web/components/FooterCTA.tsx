@@ -1,6 +1,6 @@
 "use client";
 
-import { Apple } from "lucide-react";
+import { AppleLogo } from "./Logo";
 import Link from "next/link";
 import { footerCta } from "@/content/site";
 import { FadeUp } from "./Motion";
@@ -44,7 +44,7 @@ export function FooterCTA() {
                   className="btn btn-primary"
                   style={{ padding: "14px 26px", fontSize: 16 }}
                 >
-                  <Apple size={16} /> {footerCta.primary.label}
+                  <AppleLogo size={16} /> {footerCta.primary.label}
                 </Link>
                 <Link
                   href={footerCta.secondary.href}

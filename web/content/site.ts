@@ -344,7 +344,7 @@ export const footer = {
     ]},
     { title: "Help", links: [
       { l: "Install guide", h: "/install/" },
-      { l: "Pricing", h: "/#pricing" },
+      { l: "Pricing", h: "/pricing/" },
       { l: "FAQ", h: "/#faq" },
       { l: "Contact", h: "/contact/" },
     ]},
