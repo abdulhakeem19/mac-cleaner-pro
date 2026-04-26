@@ -233,6 +233,8 @@ struct LargeFilesView: View {
                     .lineLimit(1).truncationMode(.middle)
             }
         }
+        .tableStyle(.inset(alternatesRowBackgrounds: false))
+        .scrollContentBackground(.hidden)
         .frame(maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

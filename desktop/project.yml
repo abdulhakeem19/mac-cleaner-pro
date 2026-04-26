@@ -51,6 +51,8 @@ targets:
     sources:
       - path: Core
       - path: Shared
+    dependencies:
+      - sdk: Security.framework
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.maccleanerpro.Core

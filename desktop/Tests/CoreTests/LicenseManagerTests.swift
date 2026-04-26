@@ -1,4 +1,5 @@
 import XCTest
+import Security
 @testable import Core
 
 final class LicenseManagerTests: XCTestCase {
@@ -7,6 +8,12 @@ final class LicenseManagerTests: XCTestCase {
         super.setUp()
         UserDefaults.standard.removeObject(forKey: "MacCleanerPro.installDate")
         UserDefaults.standard.removeObject(forKey: "MacCleanerPro.licenseKey")
+        // Clear Keychain so each test starts with a fresh trial state
+        let q: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String: "com.maccleanerpro",
+        ]
+        SecItemDelete(q as CFDictionary)
     }
 
     func testFreshInstallStartsTrial() async {

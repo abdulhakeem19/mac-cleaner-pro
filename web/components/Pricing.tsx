@@ -348,6 +348,18 @@ export function Pricing() {
                     marginTop: 22,
                     padding: "12px 16px",
                   }}
+                  onClick={() => {
+                    if (p.key === "free") {
+                      window.location.href = "/download/";
+                      return;
+                    }
+                    const pid = p.paddleProductId;
+                    if (pid && typeof window !== "undefined" && window.Paddle) {
+                      window.Paddle.Checkout.open({ product: pid });
+                    } else {
+                      window.location.href = "/pricing/";
+                    }
+                  }}
                 >
                   {p.cta}
                 </button>

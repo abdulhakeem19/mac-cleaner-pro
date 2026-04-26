@@ -54,6 +54,24 @@ struct SettingsView: View {
     @StateObject private var model = SettingsModel()
     @EnvironmentObject private var theme: ThemeManager
 
+    private var isTrialOrExpired: Bool {
+        switch model.licenseState {
+        case .trial, .expired: return true
+        case .pro: return false
+        }
+    }
+
+    @ViewBuilder private var buyLicenseButton: some View {
+        Button {
+            if let url = URL(string: "https://maccleanerpro.com/pricing/") {
+                NSWorkspace.shared.open(url)
+            }
+        } label: {
+            Label("Buy License", systemImage: "arrow.up.right")
+                .font(.system(size: 12, weight: .semibold))
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -130,15 +148,13 @@ struct SettingsView: View {
                     Button("Clear") { model.clearLicense() }
                         .buttonStyle(SoftButtonStyle())
                     Spacer()
-                    Button {
-                        if let url = URL(string: "https://maccleanerpro.com/buy") {
-                            NSWorkspace.shared.open(url)
+                    Group {
+                        if isTrialOrExpired {
+                            buyLicenseButton.buttonStyle(GradientButtonStyle())
+                        } else {
+                            buyLicenseButton.buttonStyle(SoftButtonStyle())
                         }
-                    } label: {
-                        Label("Buy License", systemImage: "arrow.up.right")
-                            .font(.system(size: 12, weight: .semibold))
                     }
-                    .buttonStyle(SoftButtonStyle())
                 }
 
                 Text("Payments processed by Paddle.")
@@ -333,7 +349,7 @@ private struct AdvancedActionRow: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.rMd, style: .continuous)
                     .fill(hovering ? Theme.hoverFill : Color.clear)
             )
             .contentShape(Rectangle())

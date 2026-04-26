@@ -27,7 +27,7 @@ export const hero = {
   headlineSubAfter: "on your first scan.",
   description:
     "A privacy-first performance analyzer & system cleaner, written in native Swift. No telemetry, no cloud uploads, no subscription. Just deep macOS integration and a single click.",
-  primaryCta: { label: "Download free · for macOS", href: "#download" },
+  primaryCta: { label: "Download free · for macOS", href: "/download/" },
   secondaryCta: { label: "Watch Smart Scan", href: "#scan" },
   bullets: [
     "14-day free trial",
@@ -178,6 +178,9 @@ export const security = {
   badges: ["Zero telemetry", "Local-only scan", "Open scope"],
 } as const;
 
+const PADDLE_PRO    = process.env.NEXT_PUBLIC_PADDLE_PRO_PRODUCT    ?? null;
+const PADDLE_FAMILY = process.env.NEXT_PUBLIC_PADDLE_FAMILY_PRODUCT ?? null;
+
 /** Pricing — USD + INR. Numbers match LicenseManager trial length. */
 export const pricing = {
   eyebrow: "Pricing",
@@ -199,6 +202,7 @@ export const pricing = {
       desc: "Try the core scan and see what you can reclaim.",
       cta: "Download free",
       primary: false,
+      paddleProductId: null as string | null,
       feats: [
         "Smart Scan (preview)",
         "Clean up to 500 MB / month",
@@ -219,6 +223,7 @@ export const pricing = {
       cta: "Buy Mac Cleaner Pro",
       primary: true,
       tag: "Most popular",
+      paddleProductId: PADDLE_PRO as string | null,
       feats: [
         "Unlimited Smart Scan & cleanup",
         "Large & Old Files",
@@ -240,6 +245,7 @@ export const pricing = {
       desc: "Share Pro with your household.",
       cta: "Get the Family plan",
       primary: false,
+      paddleProductId: PADDLE_FAMILY as string | null,
       feats: [
         "Everything in Pro",
         "Up to 5 Macs on one license",
@@ -253,7 +259,7 @@ export const pricing = {
     "Lifetime v1.x updates — never a re-purchase",
     "EMI available via Razorpay (India)",
   ],
-} as const;
+};
 
 export const faq = {
   eyebrow: "FAQ",
@@ -328,7 +334,7 @@ export const footerCta = {
   title: "Free up gigabytes.",
   titleGradient: "Get a faster Mac tonight.",
   body: "14 days free. Then $39 once. That's it.",
-  primary: { label: "Download for macOS", href: "#download" },
+  primary: { label: "Download for macOS", href: "/download/" },
   secondary: { label: "See pricing", href: "#pricing" },
 } as const;
 

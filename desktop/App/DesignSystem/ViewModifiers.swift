@@ -164,17 +164,10 @@ struct StatusChip: View {
 struct LogoMark: View {
     var size: CGFloat = 22
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .fill(Theme.brandGradient)
-                .shadow(color: Theme.accentRing, radius: size * 0.4, y: size * 0.2)
-            // Stylised sparkle / sweep cuts (mirrors the website mark)
-            Image(systemName: "sparkles")
-                .font(.system(size: size * 0.55, weight: .bold))
-                .foregroundStyle(.white)
-                .opacity(0.95)
-        }
-        .frame(width: size, height: size)
+        Image("mcp_logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
     }
 }
 

@@ -12,6 +12,7 @@ final class SmartScanModel: ObservableObject {
     @Published var lastScannedAt: Date?
     @Published var lastUndoToken: UndoToken?
     @Published var actionMessage: String?
+    @Published var scanDisplayActive = false
 
     private let engine = ScanEngine()
     private let deletion = DeletionService.shared
@@ -21,19 +22,27 @@ final class SmartScanModel: ObservableObject {
         scanTask?.cancel()
         guard let pack = loadBundledPack() else { return }
         isScanning = true
+        scanDisplayActive = true
         results = []
-        // Clear any lingering "Permanently removed …" / "Restored …" line from
-        // the previous action so the post-scan UI starts clean.
         if lastUndoToken == nil { actionMessage = nil }
+        let start = Date()
         scanTask = Task { [engine] in
             let scanned = await engine.scan(pack: pack)
             await MainActor.run {
                 self.results = scanned
-                // Default-check rules tagged `.safe`.
                 self.selected = Set(scanned.filter { $0.safety == .safe }.map(\.ruleID))
                 self.recomputeTotal()
                 self.lastScannedAt = Date()
                 self.isScanning = false
+            }
+            // Keep card visible for the full 12 s animation + 0.5 s completion burst
+            let elapsed = Date().timeIntervalSince(start)
+            let remaining = max(0, 12.5 - elapsed)
+            if remaining > 0 {
+                try? await Task.sleep(for: .seconds(remaining))
+            }
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.25)) { self.scanDisplayActive = false }
             }
         }
     }
@@ -41,6 +50,7 @@ final class SmartScanModel: ObservableObject {
     func cancel() {
         scanTask?.cancel()
         isScanning = false
+        scanDisplayActive = false
     }
 
     /// Move every URL from currently-selected, non-helper, non-empty rules to
@@ -134,6 +144,7 @@ final class SmartScanModel: ObservableObject {
 struct SmartScanView: View {
     @StateObject private var model = SmartScanModel()
     @StateObject private var gate = LicenseGate.shared
+    @State private var showExpiredSheet = false
 
     var body: some View {
         ScrollView {
@@ -146,7 +157,7 @@ struct SmartScanView: View {
                         .padding(12)
                         .glassCard(padded: false)
                 }
-                if model.isScanning && model.results.isEmpty {
+                if model.scanDisplayActive {
                     scanningState
                 } else if model.results.isEmpty {
                     emptyState
@@ -161,13 +172,43 @@ struct SmartScanView: View {
             .padding(.horizontal, 28)
             .padding(.top, 28)
             .padding(.bottom, 110)  // leave room for the floating footer
+            .animation(.easeOut(duration: 0.25), value: model.scanDisplayActive)
         }
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom) { footer }
-        .onAppear {
-            if model.results.isEmpty && !model.isScanning { model.scan() }
-        }
         .task { await gate.refresh() }
+        .sheet(isPresented: $showExpiredSheet) {
+            VStack(spacing: 20) {
+                ZStack {
+                    Circle()
+                        .fill(Theme.bad.opacity(0.12))
+                        .frame(width: 64, height: 64)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(Theme.bad)
+                }
+                Text("Your trial has ended")
+                    .font(.system(size: 20, weight: .semibold))
+                Text("Get a license to continue cleaning — pay once, yours forever.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 280)
+                HStack(spacing: 10) {
+                    Button("Maybe later") { showExpiredSheet = false }
+                        .buttonStyle(SoftButtonStyle())
+                    Button("Buy Now") {
+                        if let url = URL(string: "https://maccleanerpro.com/pricing/") {
+                            NSWorkspace.shared.open(url)
+                        }
+                        showExpiredSheet = false
+                    }
+                    .buttonStyle(GradientButtonStyle())
+                }
+            }
+            .padding(32)
+            .frame(width: 380)
+        }
     }
 
     // MARK: - Header
@@ -179,7 +220,7 @@ struct SmartScanView: View {
                 title: "Smart Scan",
                 subtitle: model.lastScannedAt
                     .map { "Last scanned \($0.formatted(date: .omitted, time: .standard))" }
-                    ?? "Click Scan to see what's reclaimable"
+                    ?? "Tap Scan to find caches, logs, and reclaimable space"
             )
             Spacer()
             if model.isScanning {
@@ -189,7 +230,7 @@ struct SmartScanView: View {
                 Button {
                     model.scan()
                 } label: {
-                    Label("Rescan", systemImage: "arrow.clockwise")
+                    Label(model.results.isEmpty ? "Scan" : "Rescan", systemImage: "arrow.clockwise")
                 }
                 .buttonStyle(SoftButtonStyle())
             }
@@ -199,36 +240,62 @@ struct SmartScanView: View {
     // MARK: - States
 
     private var scanningState: some View {
-        VStack(spacing: 14) {
-            ProgressView()
-                .controlSize(.large)
-                .tint(Theme.accent)
-            Text("Scanning your Mac…")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 280)
-        .glassCard()
+        ScanProgressCard()
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 20) {
             ZStack {
                 Circle()
                     .fill(Theme.accentSoft)
-                    .frame(width: 64, height: 64)
-                Image(systemName: "sparkles")
-                    .font(.system(size: 26, weight: .semibold))
+                    .frame(width: 80, height: 80)
+                Image(systemName: "sparkles.fill")
+                    .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(Theme.brandGradient)
             }
-            Text("Ready to scan")
-                .font(.system(size: 15, weight: .semibold))
-            Text("Click Rescan to find caches, logs, and reclaimable space.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+
+            VStack(spacing: 8) {
+                Text("Ready to find what's slowing down your Mac")
+                    .font(.system(size: 18, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                Text("Smart Scan checks caches, logs, developer artifacts, and browser data in parallel.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            HStack(spacing: 8) {
+                ForEach(["14 rules · Safety-tagged",
+                         "Trash-first · 30-day undo",
+                         "Parallel Swift scan"], id: \.self) { pill in
+                    Text(pill)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(Theme.accentSoft))
+                        .overlay(Capsule().strokeBorder(Theme.accentRing, lineWidth: 1))
+                }
+            }
+
+            if model.isScanning {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(Theme.accent)
+            } else {
+                Button {
+                    model.scan()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                        Text("Start Smart Scan")
+                    }
+                }
+                .buttonStyle(GradientButtonStyle())
+                .frame(width: 280)
+            }
         }
-        .frame(maxWidth: .infinity, minHeight: 280)
+        .frame(maxWidth: .infinity, minHeight: 320)
         .padding(28)
         .glassCard(padded: false)
     }
@@ -281,7 +348,11 @@ struct SmartScanView: View {
                     .frame(maxWidth: 280, alignment: .trailing)
             }
             Button {
-                model.cleanSelected()
+                if gate.canCleanNow {
+                    model.cleanSelected()
+                } else {
+                    showExpiredSheet = true
+                }
             } label: {
                 HStack(spacing: 8) {
                     if model.isCleaning {
@@ -363,11 +434,11 @@ private struct RuleRow: View {
             HStack(alignment: .center, spacing: 14) {
                 // Custom gradient checkbox
                 ZStack {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
                         .fill(isSelected ? AnyShapeStyle(Theme.brandGradient)
                                          : AnyShapeStyle(Color.clear))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            RoundedRectangle(cornerRadius: Theme.rSm, style: .continuous)
                                 .strokeBorder(
                                     isSelected ? Color.clear : Theme.border,
                                     lineWidth: 1.5

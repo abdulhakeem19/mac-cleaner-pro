@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import { ThemeProvider, themeBootScript } from "@/components/ThemeProvider";
+import { PaddleScript } from "@/components/PaddleScript";
 import { brand, pricing } from "@/content/site";
 import "./globals.css";
 
@@ -86,6 +87,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
+        {process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID && (
+          <PaddleScript vendorId={process.env.NEXT_PUBLIC_PADDLE_VENDOR_ID} />
+        )}
         <Script
           id="ld-json"
           type="application/ld+json"

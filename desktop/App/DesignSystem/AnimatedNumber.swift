@@ -17,7 +17,6 @@ struct AnimatedByteCount: View, Animatable {
         Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
             .font(font)
             .foregroundStyle(color)
-            .contentTransition(.numericText())
             .monospacedDigit()
     }
 }

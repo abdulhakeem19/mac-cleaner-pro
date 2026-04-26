@@ -426,7 +426,7 @@ private struct LeftoverRow: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: Theme.rMd, style: .continuous)
                     .fill(hovering ? Color.white.opacity(0.04) : Color.clear)
             )
             .contentShape(Rectangle())
