@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: `%s · ${brand.name}`,
   },
   description:
-    `${brand.name} is the best free mac cleaner app for macOS. Free up gigabytes of disk space, clear caches, remove Xcode junk, uninstall apps completely. Native Swift, privacy-first, pay-once.`,
+    `${brand.name} is the honest CleanMyMac alternative for macOS. Finally see what's inside System Data, clear caches, remove Xcode junk, uninstall apps completely. Native Swift, privacy-first, pay-once.`,
   applicationName: brand.name,
   authors: [{ name: brand.name }],
   keywords: [
@@ -71,6 +71,17 @@ export const metadata: Metadata = {
     "mac disk cleaner free trial",
     "best free mac cleaner 2025",
     "mac disk space full",
+    // System Data + competitor-alternative cluster (research-validated)
+    "system data mac",
+    "what is system data mac",
+    "mac system data cleaner",
+    "clear system data mac",
+    "cleanmymac alternative",
+    "daisydisk alternative",
+    "mac cleaner no subscription",
+    "mac disk analyzer and cleaner",
+    "system data taking up space mac",
+    "how to reduce system data mac",
   ],
   robots: {
     index: true,
@@ -88,7 +99,7 @@ export const metadata: Metadata = {
     siteName: brand.name,
     title: `${brand.name} — Best Mac Disk Space Cleaner for macOS`,
     description:
-      `${brand.name} is the best free mac cleaner app for macOS. Free up gigabytes of disk space, clear caches, remove Xcode junk, uninstall apps completely. Native Swift, privacy-first, pay-once.`,
+      `${brand.name} is the honest CleanMyMac alternative for macOS. Finally see what's inside System Data, clear caches, remove Xcode junk, uninstall apps completely. Native Swift, privacy-first, pay-once.`,
     url: `https://${brand.domain}`,
     locale: "en_US",
   },

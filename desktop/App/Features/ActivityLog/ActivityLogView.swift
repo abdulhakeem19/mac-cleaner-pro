@@ -107,22 +107,41 @@ struct ActivityLogView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 10) {
-            ZStack {
-                Circle()
-                    .fill(Theme.accentSoft)
-                    .frame(width: 64, height: 64)
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(Theme.brandGradient)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Theme.accentSoft)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Theme.accentRing, lineWidth: 1)
+                        )
+                        .frame(width: 52, height: 52)
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Nothing logged yet")
+                        .font(.system(size: 16, weight: .semibold))
+                        .tracking(-0.2)
+                    Text("Every clean, undo, and empty will appear here — fully on-device.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
             }
-            Text("Nothing logged yet")
-                .font(.system(size: 15, weight: .semibold))
-            Text("Run a Smart Scan and clean a few items to populate the log.")
-                .font(.callout).foregroundStyle(.secondary)
+
+            // Three example rows, dimmed
+            VStack(spacing: 8) {
+                EmptyExampleRow(icon: "sparkles",            color: Theme.accent, label: "Cleaned 12 items · Smart Scan",       weight: "—")
+                EmptyExampleRow(icon: "arrow.uturn.backward", color: Theme.ok,     label: "Restored 3 items · Smart Scan",       weight: "—")
+                EmptyExampleRow(icon: "xmark.bin",           color: Theme.bad,    label: "Permanently removed 2 items · Manual",weight: "—")
+            }
+            .opacity(0.45)
         }
-        .frame(maxWidth: .infinity, minHeight: 200)
-        .padding(28)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(22)
         .glassCard(padded: false)
     }
 }
@@ -193,6 +212,43 @@ private struct EntryRow: View {
         case .manual:      return "Manual"
         case .system:      return "System"
         }
+    }
+}
+
+/// Faint preview row shown on the empty state so users immediately understand
+/// what the log will look like once they start cleaning.
+private struct EmptyExampleRow: View {
+    let icon: String
+    let color: Color
+    let label: String
+    let weight: String
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.14))
+                    .frame(width: 28, height: 28)
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(color)
+            }
+            Text(label)
+                .font(.system(size: 12))
+            Spacer()
+            Text(weight)
+                .font(.system(size: 12).monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Theme.border.opacity(0.6), lineWidth: 1)
+        )
     }
 }
 

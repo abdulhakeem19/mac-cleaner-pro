@@ -119,6 +119,9 @@ struct LargeFilesView: View {
         .init(\.size, order: .reverse)
     ]
 
+    private var hasResults: Bool { !model.entries.isEmpty }
+    private var showFooter: Bool { hasResults || model.isScanning }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             SectionHeader(
@@ -129,7 +132,7 @@ struct LargeFilesView: View {
             controls
             table
             if model.lastUndoToken != nil { undoBanner }
-            footer
+            if showFooter { footer }
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 24)
@@ -246,25 +249,45 @@ struct LargeFilesView: View {
         )
         .overlay {
             if model.isScanning && model.entries.isEmpty {
-                VStack(spacing: 12) {
-                    ProgressView().controlSize(.large).tint(Theme.accent)
-                    Text("Walking the filesystem…")
-                        .font(.callout).foregroundStyle(.secondary)
-                }
-            } else if !model.isScanning && model.entries.isEmpty {
-                VStack(spacing: 10) {
+                VStack(spacing: 14) {
                     ZStack {
                         Circle()
+                            .stroke(Theme.accent.opacity(0.10), lineWidth: 4)
+                            .frame(width: 48, height: 48)
+                        ProgressView().controlSize(.regular).tint(Theme.accent)
+                    }
+                    VStack(spacing: 3) {
+                        Text("Walking the filesystem…")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Streaming files larger than \(Int(model.minSizeMB)) MB")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(28)
+            } else if !model.isScanning && model.entries.isEmpty {
+                VStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .fill(Theme.accentSoft)
-                            .frame(width: 56, height: 56)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .strokeBorder(Theme.accentRing, lineWidth: 1)
+                            )
+                            .frame(width: 52, height: 52)
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(Theme.brandGradient)
+                            .foregroundStyle(Theme.accent)
                     }
-                    Text("No matches yet").font(.system(size: 14, weight: .semibold))
-                    Text("Pick a folder and click Scan.")
-                        .font(.callout).foregroundStyle(.secondary)
+                    VStack(spacing: 4) {
+                        Text("Find your biggest, oldest files")
+                            .font(.system(size: 15, weight: .semibold))
+                        Text("Pick a folder, set a minimum size, and click Scan.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .padding(28)
             }
         }
     }

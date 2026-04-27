@@ -10,6 +10,23 @@ public struct ScanItem: Sendable, Hashable {
     }
 }
 
+/// Live progress events emitted by ``ScanEngine`` while the scan runs.
+///
+/// The UI subscribes to these to render a real-time scanner view (current
+/// rule, accumulated bytes / file count, sampled file paths) — no fake
+/// canned animation.
+public enum ScanEvent: Sendable {
+    /// A rule has just started scanning.
+    case ruleStarted(ruleID: String, displayName: String, index: Int, total: Int)
+    /// A file was sampled. Emitted at a throttled rate so the UI's "live
+    /// stream" panel can show real paths flying by without spamming.
+    case fileSampled(path: String, size: UInt64)
+    /// Cumulative running totals across the whole scan.
+    case progress(bytesScanned: UInt64, filesScanned: Int)
+    /// A rule finished. The UI can mark it green and move on.
+    case ruleCompleted(ruleID: String, displayName: String, totalBytes: UInt64, itemCount: Int)
+}
+
 /// Aggregated result for a single rule.
 public struct RuleScanResult: Sendable, Identifiable {
     public let ruleID: String
@@ -54,10 +71,45 @@ public actor ScanEngine {
     public init() {}
 
     public func scan(pack: RulePack) async -> [RuleScanResult] {
-        await withTaskGroup(of: RuleScanResult.self, returning: [RuleScanResult].self) { group in
-            for rule in pack.rules {
+        await scan(pack: pack, onEvent: nil)
+    }
+
+    /// Streaming variant. `onEvent` is called from a background actor, so
+    /// callers should hop to `MainActor` before mutating any `@Published` state.
+    /// Sample paths and progress events are throttled inside the engine to
+    /// keep callback volume well under 100 Hz even on fast SSDs.
+    public func scan(
+        pack: RulePack,
+        onEvent: (@Sendable (ScanEvent) -> Void)?
+    ) async -> [RuleScanResult] {
+        let rules = pack.rules
+        let total = rules.count
+        // Shared running counters across all parallel rule scanners. We use
+        // an actor-encapsulated mutable struct because the task group's child
+        // tasks may emit `progress` events concurrently.
+        let aggregator = ProgressAggregator(emitter: onEvent)
+
+        return await withTaskGroup(of: RuleScanResult.self, returning: [RuleScanResult].self) { group in
+            for (idx, rule) in rules.enumerated() {
                 group.addTask { [resolver] in
-                    await Self.scanOne(rule: rule, resolver: resolver)
+                    await aggregator.ruleStarted(
+                        ruleID: rule.id,
+                        displayName: rule.displayName,
+                        index: idx,
+                        total: total
+                    )
+                    let result = await Self.scanOne(
+                        rule: rule,
+                        resolver: resolver,
+                        aggregator: aggregator
+                    )
+                    await aggregator.ruleCompleted(
+                        ruleID: rule.id,
+                        displayName: rule.displayName,
+                        totalBytes: result.totalSize,
+                        itemCount: result.items.count
+                    )
+                    return result
                 }
             }
             var out: [RuleScanResult] = []
@@ -68,7 +120,11 @@ public actor ScanEngine {
         }
     }
 
-    private static func scanOne(rule: RulePack.Rule, resolver: PathResolver) async -> RuleScanResult {
+    private static func scanOne(
+        rule: RulePack.Rule,
+        resolver: PathResolver,
+        aggregator: ProgressAggregator? = nil
+    ) async -> RuleScanResult {
         if rule.requiresHelper {
             return RuleScanResult(
                 ruleID: rule.id,
@@ -89,10 +145,13 @@ public actor ScanEngine {
 
         for root in roots {
             if Task.isCancelled { break }
-            let (size, mtime) = sizeAndModified(of: root)
+            let (size, mtime) = sizeAndModified(of: root, aggregator: aggregator)
             if let cutoff, let mtime, mtime > cutoff { continue }
             items.append(ScanItem(url: root, size: size, modifiedAt: mtime))
             total &+= size
+            // Emit a sample for the root path itself (so even shallow scans
+            // produce something for the UI's stream).
+            await aggregator?.fileSampled(path: root.path, size: size)
         }
 
         return RuleScanResult(
@@ -109,7 +168,10 @@ public actor ScanEngine {
     /// Total file-allocated size + most-recent mtime of `url`. Recurses into
     /// directories using `FileManager.enumerator`. Hidden files are skipped to
     /// match user expectations and avoid touching state like `.DS_Store`.
-    private static func sizeAndModified(of url: URL) -> (UInt64, Date?) {
+    private static func sizeAndModified(
+        of url: URL,
+        aggregator: ProgressAggregator? = nil
+    ) -> (UInt64, Date?) {
         let keys: [URLResourceKey] = [
             .totalFileAllocatedSizeKey, .isDirectoryKey, .contentModificationDateKey
         ]
@@ -119,6 +181,7 @@ public actor ScanEngine {
         if values.isDirectory == true {
             var total: UInt64 = 0
             var newest = values.contentModificationDate
+            var counter: Int = 0
             if let enumerator = FileManager.default.enumerator(
                 at: url,
                 includingPropertiesForKeys: keys,
@@ -127,15 +190,85 @@ public actor ScanEngine {
                 for case let child as URL in enumerator {
                     if Task.isCancelled { break }
                     let r = try? child.resourceValues(forKeys: Set(keys))
-                    if let s = r?.totalFileAllocatedSize { total &+= UInt64(s) }
+                    let childSize = UInt64(r?.totalFileAllocatedSize ?? 0)
+                    if childSize > 0 { total &+= childSize }
                     if let m = r?.contentModificationDate {
                         if newest.map({ m > $0 }) ?? true { newest = m }
                     }
+                    counter &+= 1
+                    // Mid-walk path sample roughly every 128 files — purely
+                    // for the UI's live-stream panel. We don't emit progress
+                    // updates here to avoid double-counting with the per-root
+                    // delta below.
+                    if let aggregator, counter % 128 == 0 {
+                        let path = child.path
+                        Task.detached(priority: .userInitiated) {
+                            await aggregator.fileSampled(path: path, size: childSize)
+                        }
+                    }
+                }
+            }
+            // Single delta per root — accurate, no double counting.
+            if let aggregator {
+                let bytes = total
+                let files = counter
+                Task.detached(priority: .userInitiated) {
+                    await aggregator.deltaProgress(addBytes: bytes, addFiles: files)
                 }
             }
             return (total, newest)
         } else {
+            // Single file root.
+            if let aggregator {
+                let bytes = UInt64(values.totalFileAllocatedSize ?? 0)
+                Task.detached(priority: .userInitiated) {
+                    await aggregator.deltaProgress(addBytes: bytes, addFiles: 1)
+                }
+            }
             return (UInt64(values.totalFileAllocatedSize ?? 0), values.contentModificationDate)
+        }
+    }
+}
+
+// MARK: - Progress aggregator
+
+/// Actor-isolated counter shared across parallel rule scanners. Throttles
+/// `progress` events so the UI receives at most ~10 per second per rule.
+actor ProgressAggregator {
+    private var totalBytes: UInt64 = 0
+    private var totalFiles: Int = 0
+    private var lastEmit: Date = .distantPast
+    private let emitter: (@Sendable (ScanEvent) -> Void)?
+
+    init(emitter: (@Sendable (ScanEvent) -> Void)?) {
+        self.emitter = emitter
+    }
+
+    func ruleStarted(ruleID: String, displayName: String, index: Int, total: Int) {
+        emitter?(.ruleStarted(ruleID: ruleID, displayName: displayName, index: index, total: total))
+    }
+
+    func ruleCompleted(ruleID: String, displayName: String, totalBytes: UInt64, itemCount: Int) {
+        emitter?(.ruleCompleted(ruleID: ruleID, displayName: displayName,
+                                totalBytes: totalBytes, itemCount: itemCount))
+        // Flush a final progress snapshot so the UI lands on accurate totals.
+        emitter?(.progress(bytesScanned: self.totalBytes, filesScanned: self.totalFiles))
+    }
+
+    /// Emits a sampled path; never throttled — sampling is done at the source.
+    func fileSampled(path: String, size: UInt64) {
+        emitter?(.fileSampled(path: path, size: size))
+    }
+
+    /// Adds an incremental delta to running totals and emits a throttled
+    /// `progress` event (max ~10 Hz).
+    func deltaProgress(addBytes: UInt64, addFiles: Int) {
+        totalBytes &+= addBytes
+        totalFiles &+= addFiles
+        let now = Date()
+        if now.timeIntervalSince(lastEmit) >= 0.10 {
+            lastEmit = now
+            emitter?(.progress(bytesScanned: totalBytes, filesScanned: totalFiles))
         }
     }
 }

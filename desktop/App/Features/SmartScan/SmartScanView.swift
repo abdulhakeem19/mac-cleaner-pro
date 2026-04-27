@@ -14,6 +14,14 @@ final class SmartScanModel: ObservableObject {
     @Published var actionMessage: String?
     @Published var scanDisplayActive = false
 
+    // Live, real-time scan progress (driven by ScanEvent stream).
+    @Published var liveBytesScanned: UInt64 = 0
+    @Published var liveFilesScanned: Int = 0
+    @Published var liveCurrentRule: String = ""
+    @Published var liveRuleIndex: Int = 0
+    @Published var liveRuleTotal: Int = 0
+    @Published var liveStreamPaths: [String] = []
+
     private let engine = ScanEngine()
     private let deletion = DeletionService.shared
     private var scanTask: Task<Void, Never>?
@@ -24,10 +32,42 @@ final class SmartScanModel: ObservableObject {
         isScanning = true
         scanDisplayActive = true
         results = []
+        // Reset live counters for a fresh scan.
+        liveBytesScanned = 0
+        liveFilesScanned = 0
+        liveCurrentRule = ""
+        liveRuleIndex = 0
+        liveRuleTotal = pack.rules.count
+        liveStreamPaths = []
         if lastUndoToken == nil { actionMessage = nil }
         let start = Date()
         scanTask = Task { [engine] in
-            let scanned = await engine.scan(pack: pack)
+            let scanned = await engine.scan(pack: pack) { [weak self] event in
+                // Hop to MainActor — emitter is called from the engine actor.
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    switch event {
+                    case .ruleStarted(_, let name, let index, let total):
+                        self.liveCurrentRule = name
+                        self.liveRuleIndex = index
+                        self.liveRuleTotal = total
+                    case .fileSampled(let path, _):
+                        // Display ~/-relative paths when possible for readability.
+                        let display = Self.tildify(path)
+                        withAnimation(.easeOut(duration: 0.28)) {
+                            self.liveStreamPaths.append(display)
+                            if self.liveStreamPaths.count > 20 {
+                                self.liveStreamPaths.removeFirst()
+                            }
+                        }
+                    case .progress(let bytes, let files):
+                        self.liveBytesScanned = bytes
+                        self.liveFilesScanned = files
+                    case .ruleCompleted:
+                        break
+                    }
+                }
+            }
             await MainActor.run {
                 self.results = scanned
                 self.selected = Set(scanned.filter { $0.safety == .safe }.map(\.ruleID))
@@ -35,22 +75,35 @@ final class SmartScanModel: ObservableObject {
                 self.lastScannedAt = Date()
                 self.isScanning = false
             }
-            // Keep card visible for the full 12 s animation + 0.5 s completion burst
+            // Show the completion burst for at least 0.7s after the real
+            // scan finishes — feels more deliberate than snapping straight
+            // to the results list.
             let elapsed = Date().timeIntervalSince(start)
-            let remaining = max(0, 12.5 - elapsed)
+            let minDisplay: Double = 1.6
+            let remaining = max(0, minDisplay - elapsed)
             if remaining > 0 {
                 try? await Task.sleep(for: .seconds(remaining))
             }
+            try? await Task.sleep(for: .milliseconds(700))
             await MainActor.run {
                 withAnimation(.easeOut(duration: 0.25)) { self.scanDisplayActive = false }
             }
         }
     }
 
+    private static func tildify(_ path: String) -> String {
+        let home = NSHomeDirectory()
+        if path.hasPrefix(home) {
+            return "~" + String(path.dropFirst(home.count))
+        }
+        return path
+    }
+
     func cancel() {
         scanTask?.cancel()
         isScanning = false
         scanDisplayActive = false
+        liveStreamPaths = []
     }
 
     /// Move every URL from currently-selected, non-helper, non-empty rules to
@@ -171,11 +224,19 @@ struct SmartScanView: View {
             }
             .padding(.horizontal, 28)
             .padding(.top, 28)
-            .padding(.bottom, 110)  // leave room for the floating footer
+            // Reserve space for the floating footer only when it's visible.
+            .padding(.bottom, (!model.results.isEmpty || model.scanDisplayActive) ? 110 : 28)
             .animation(.easeOut(duration: 0.25), value: model.scanDisplayActive)
         }
         .scrollContentBackground(.hidden)
-        .safeAreaInset(edge: .bottom) { footer }
+        .safeAreaInset(edge: .bottom) {
+            // Footer is hidden on the initial empty state — nothing to clean,
+            // nothing to report. It re-appears once results exist or a scan
+            // is actively running.
+            if !model.results.isEmpty || model.scanDisplayActive {
+                footer
+            }
+        }
         .task { await gate.refresh() }
         .sheet(isPresented: $showExpiredSheet) {
             VStack(spacing: 20) {
@@ -220,7 +281,7 @@ struct SmartScanView: View {
                 title: "Smart Scan",
                 subtitle: model.lastScannedAt
                     .map { "Last scanned \($0.formatted(date: .omitted, time: .standard))" }
-                    ?? "Tap Scan to find caches, logs, and reclaimable space"
+                    ?? "Tap Scan to break down System Data — caches, logs, and reclaimable space"
             )
             Spacer()
             if model.isScanning {
@@ -240,64 +301,100 @@ struct SmartScanView: View {
     // MARK: - States
 
     private var scanningState: some View {
-        ScanProgressCard()
+        ScanProgressCard(model: model)
     }
 
     private var emptyState: some View {
-        VStack(spacing: 20) {
-            ZStack {
-                Circle()
-                    .fill(Theme.accentSoft)
-                    .frame(width: 80, height: 80)
-                Image(systemName: "sparkles.fill")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(Theme.brandGradient)
-            }
-
-            VStack(spacing: 8) {
-                Text("Ready to find what's slowing down your Mac")
-                    .font(.system(size: 18, weight: .semibold))
-                    .multilineTextAlignment(.center)
-                Text("Smart Scan checks caches, logs, developer artifacts, and browser data in parallel.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            HStack(spacing: 8) {
-                ForEach(["14 rules · Safety-tagged",
-                         "Trash-first · 30-day undo",
-                         "Parallel Swift scan"], id: \.self) { pill in
-                    Text(pill)
-                        .font(.system(size: 11, weight: .semibold))
+        VStack(alignment: .leading, spacing: 26) {
+            // Compact header — small badge icon + title on the same row
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Theme.accentSoft)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Theme.accentRing, lineWidth: 1)
+                        )
+                        .frame(width: 52, height: 52)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(Theme.accent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Capsule().fill(Theme.accentSoft))
-                        .overlay(Capsule().strokeBorder(Theme.accentRing, lineWidth: 1))
                 }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Smart Scan")
+                        .font(.system(size: 22, weight: .semibold))
+                        .tracking(-0.3)
+                    Text("Break down what's hiding in System Data — safely.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
             }
 
+            // What gets scanned — 4 category tiles
+            HStack(spacing: 10) {
+                ScanCategoryTile(icon: "internaldrive",       title: "Caches",     subtitle: "User & system")
+                ScanCategoryTile(icon: "doc.text",             title: "Logs",       subtitle: "Diagnostics")
+                ScanCategoryTile(icon: "hammer",               title: "Developer",  subtitle: "Xcode artifacts")
+                ScanCategoryTile(icon: "safari",               title: "Browsers",   subtitle: "Chrome · Safari")
+            }
+
+            // Primary CTA
             if model.isScanning {
-                ProgressView()
-                    .controlSize(.small)
-                    .tint(Theme.accent)
+                HStack {
+                    Spacer()
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(Theme.accent)
+                    Spacer()
+                }
+                .frame(height: 48)
             } else {
                 Button {
                     model.scan()
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         Image(systemName: "sparkles")
                         Text("Start Smart Scan")
+                            .fontWeight(.semibold)
                     }
+                    .frame(maxWidth: .infinity, minHeight: 22)
                 }
                 .buttonStyle(GradientButtonStyle())
-                .frame(width: 280)
+                .frame(height: 48)
             }
+
+            // Trust line
+            HStack(spacing: 18) {
+                Spacer()
+                trustItem(icon: "lock.shield",                   text: "Local-only scan")
+                trustDot
+                trustItem(icon: "arrow.uturn.backward.circle",   text: "30-day undo")
+                trustDot
+                trustItem(icon: "checkmark.seal",                text: "Trash-first")
+                Spacer()
+            }
+            .padding(.top, 2)
         }
-        .frame(maxWidth: .infinity, minHeight: 320)
+        .frame(maxWidth: .infinity)
         .padding(28)
         .glassCard(padded: false)
+    }
+
+    private func trustItem(icon: String, text: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+            Text(text)
+        }
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(.secondary)
+    }
+
+    private var trustDot: some View {
+        Circle()
+            .fill(Color.secondary.opacity(0.35))
+            .frame(width: 3, height: 3)
     }
 
     private var resultsList: some View {
@@ -500,6 +597,44 @@ private struct RuleRow: View {
         .opacity(disabled ? 0.65 : 1.0)
         .animation(.easeOut(duration: 0.15), value: hovering)
         .animation(.easeOut(duration: 0.18), value: isSelected)
+    }
+}
+
+/// Small tile shown in the Smart Scan empty state — gives users a concrete
+/// preview of what each scan category looks like before they tap Start.
+private struct ScanCategoryTile: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Theme.accentSoft)
+                    .frame(width: 32, height: 32)
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                Text(subtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Theme.border, lineWidth: 1)
+        )
     }
 }
 

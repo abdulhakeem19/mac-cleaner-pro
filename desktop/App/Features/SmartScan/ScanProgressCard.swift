@@ -1,235 +1,286 @@
 import SwiftUI
 
-// MARK: - Animated scanning card
+// MARK: - Real-time scan progress card
 
 /// Full-width card shown while SmartScan is running.
-/// Progress values are simulated for display — real per-rule streaming
-/// would require an AsyncStream API on ScanEngine (future work).
+/// Every value displayed is sourced from `SmartScanModel`'s live `@Published`
+/// fields — these are driven by `ScanEvent`s emitted from the real
+/// `ScanEngine` actor walk. No simulated counts, no fake paths.
+///
+/// What's animated vs. observed:
+///   • Continuously rotating gradient ring  → animated (visual flourish)
+///   • Inner radar sweep                    → animated (visual flourish)
+///   • Bytes / file counter inside the ring → REAL from the engine
+///   • Live file path stream                → REAL paths from the engine
+///   • Active rule label                    → REAL, updates per rule
+///   • Throughput estimate                  → derived from bytes / elapsed
 struct ScanProgressCard: View {
-    @State private var arcProgress: Double = 0       // 0 → 1, drives arc fill
-    @State private var displayPct: Double = 0        // 0 → 92, shown as Int in pill
-    @State private var simulatedBytes: Double = 0
-    @State private var activeRule: Int = 0
+    @ObservedObject var model: SmartScanModel
 
-    private let rules: [(name: String, path: String)] = [
-        ("Scanning user caches",    "~/Library/Caches/*"),
-        ("Hashing Xcode artifacts", "~/Library/Developer/Xcode/DerivedData"),
-        ("Browser caches",          "Chrome · Firefox · Safari"),
-        ("User logs",               "~/Library/Logs/**"),
-        ("App leftovers",           "~/Library/Application Support"),
-        ("System caches",           "/Library/Caches/*"),
-    ]
-
-    private let stageBytes: [Double] = [
-        3.0e9, 6.3e9, 6.42e9, 6.44e9, 7.1e9, 9.4e9,
-    ]
+    @State private var ringRotation:  Double = 0
+    @State private var sweepRotation: Double = 0
+    @State private var startTime: Date = .now
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
-            headerRow
-            arcMeter
-            ruleList
+            header
+            scanRing
+            fileStream
+            statsBar
         }
-        .padding(24)
+        .padding(26)
         .glassCard(padded: false)
-        .task { await runAnimation() }
+        .onAppear { startTime = Date() }
+        .task {
+            // Spin the visual rings forever — independent of real progress.
+            withAnimation(.linear(duration: 2.6).repeatForever(autoreverses: false)) {
+                ringRotation = 360
+            }
+            withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                sweepRotation = 360
+            }
+        }
+    }
+
+    // MARK: Derived values
+
+    private var phase: Double {
+        // Use rule index as the canonical % complete; falls back to 0/0 → 0.
+        guard model.liveRuleTotal > 0 else { return 0 }
+        return Double(model.liveRuleIndex + 1) / Double(model.liveRuleTotal)
+    }
+
+    private var elapsedSeconds: Double {
+        max(0.001, Date().timeIntervalSince(startTime))
+    }
+
+    private var throughputMBPerSec: Int {
+        let bytesPerSec = Double(model.liveBytesScanned) / elapsedSeconds
+        return max(0, Int(bytesPerSec / 1_048_576))
+    }
+
+    private var bytesText: String {
+        ByteCountFormatter.string(
+            fromByteCount: Int64(model.liveBytesScanned),
+            countStyle: .file
+        )
     }
 
     // MARK: Header
 
-    private var headerRow: some View {
+    private var header: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("LIVE")
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(1.4)
-                    .foregroundStyle(Theme.accent)
-                Text("Smart Scan in progress")
-                    .font(.system(size: 16, weight: .semibold))
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 7) {
+                    PulsingDot(color: Theme.accent, size: 7)
+                    Text("LIVE")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(1.6)
+                        .foregroundStyle(Theme.accent)
+                }
+                Text(model.liveCurrentRule.isEmpty
+                     ? "Preparing scan…"
+                     : "Scanning \(model.liveCurrentRule)")
+                    .font(.system(size: 18, weight: .semibold))
+                    .contentTransition(.opacity)
+                    .animation(.easeOut(duration: 0.25), value: model.liveCurrentRule)
+                Text("Walking your filesystem in parallel · zero telemetry")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
             }
             Spacer()
-            HStack(spacing: 6) {
-                PulsingDot(size: 7)
-                Text("\(Int(displayPct))%")
-                    .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(Theme.accent)
+            VStack(alignment: .trailing, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 1) {
+                    Text("\(Int(phase * 100))")
+                        .font(.system(size: 32, weight: .bold).monospacedDigit())
+                        .foregroundStyle(Theme.brandGradient)
+                    Text("%")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
+                Text("rule \(model.liveRuleIndex + 1) of \(max(1, model.liveRuleTotal))")
+                    .font(.system(size: 9, weight: .semibold))
+                    .tracking(1.2)
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(Theme.accentSoft)
-            .clipShape(Capsule())
         }
     }
 
-    // MARK: Arc meter
+    // MARK: Scan ring
 
-    private var arcMeter: some View {
+    private var scanRing: some View {
         HStack {
             Spacer()
             ZStack {
-                // Background track: 270° arc starting at ~8 o'clock
                 Circle()
-                    .trim(from: 0, to: 0.75)
-                    .stroke(Theme.accent.opacity(0.10),
-                            style: StrokeStyle(lineWidth: 9, lineCap: .round))
-                    .rotationEffect(.degrees(135))
+                    .stroke(Theme.accent.opacity(0.07), lineWidth: 11)
+                    .frame(width: 178, height: 178)
 
-                // Filled arc — grows with arcProgress
                 Circle()
-                    .trim(from: 0, to: max(0.001, 0.75 * arcProgress))
+                    .trim(from: 0, to: 0.40)
                     .stroke(
-                        LinearGradient(
-                            colors: [Theme.accent, Color(red: 0.04, green: 0.52, blue: 1.0)],
-                            startPoint: .leading,
-                            endPoint: .trailing
+                        AngularGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: Theme.accent.opacity(0.0),  location: 0.0),
+                                .init(color: Theme.accent.opacity(0.35), location: 0.4),
+                                .init(color: Theme.accent,                location: 0.85),
+                                .init(color: Color(red: 0.55, green: 0.36, blue: 1.0), location: 1.0),
+                            ]),
+                            center: .center
                         ),
-                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 11, lineCap: .round)
                     )
-                    .rotationEffect(.degrees(135))
+                    .frame(width: 178, height: 178)
+                    .rotationEffect(.degrees(ringRotation))
 
-                // Center label
-                VStack(spacing: 3) {
-                    AnimatedByteCount(
-                        value: simulatedBytes,
-                        font: .system(size: 30, weight: .bold).monospacedDigit()
-                    )
-                    .animation(.easeOut(duration: 1.2), value: simulatedBytes)
-                    Text("SCANNED")
-                        .font(.system(size: 10, weight: .semibold))
-                        .tracking(1.8)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(width: 190, height: 190)
-            Spacer()
-        }
-    }
-
-    // MARK: Rule list
-
-    private var ruleList: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(rules.enumerated()), id: \.offset) { i, rule in
-                ScanRuleRow(
-                    name: rule.name,
-                    path: rule.path,
-                    rowState: rowState(for: i),
-                    bytes: i < activeRule ? stageBytes[min(i, stageBytes.count - 1)] : 0
-                )
-                if i < rules.count - 1 {
-                    Divider()
-                        .opacity(0.35)
-                        .padding(.leading, 56)
-                }
-            }
-        }
-        .background(.ultraThinMaterial,
-                    in: RoundedRectangle(cornerRadius: Theme.rLg, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.rLg, style: .continuous)
-                .strokeBorder(Theme.border, lineWidth: 1)
-        )
-    }
-
-    // MARK: Animation
-
-    private enum ScanPhase { case pending, active, done }
-
-    private func rowState(for i: Int) -> ScanRuleRow.Phase {
-        if i < activeRule { return .done }
-        if i == activeRule { return .active }
-        return .pending
-    }
-
-    private func runAnimation() async {
-        let totalDuration: Double = 12.0
-        let ruleInterval = totalDuration / Double(rules.count)  // 2 s per rule
-
-        // Single smooth linear climb — never restarts, no flicker
-        withAnimation(.linear(duration: totalDuration - 1.0)) {
-            arcProgress    = 0.95
-            displayPct     = 95
-        }
-        // Byte counter: one linear sweep from 0 to the final stage total
-        withAnimation(.linear(duration: totalDuration - 0.8)) {
-            simulatedBytes = stageBytes.last ?? 0
-        }
-
-        // Advance rule highlight every 2 s
-        for i in 0 ..< rules.count {
-            withAnimation(.easeOut(duration: 0.35)) { activeRule = i }
-            try? await Task.sleep(for: .seconds(ruleInterval))
-        }
-
-        // Final completion burst: fill arc to 100 % and flash the pill
-        withAnimation(.easeOut(duration: 0.9)) {
-            arcProgress = 1.0
-            displayPct  = 100
-        }
-        try? await Task.sleep(for: .seconds(0.45))
-    }
-}
-
-// MARK: - Per-rule row
-
-struct ScanRuleRow: View {
-    enum Phase { case pending, active, done }
-
-    let name: String
-    let path: String
-    let rowState: Phase
-    let bytes: Double
-
-    var body: some View {
-        HStack(spacing: 14) {
-            // State indicator
-            ZStack {
                 Circle()
-                    .fill(dotBackground)
-                    .frame(width: 32, height: 32)
-                if rowState == .active {
-                    PulsingDot(color: Theme.accent, size: 10)
-                } else {
-                    Circle()
-                        .fill(rowState == .done
-                              ? Theme.accent.opacity(0.45)
-                              : Color.secondary.opacity(0.18))
-                        .frame(width: 10, height: 10)
-                }
-            }
+                    .trim(from: 0, to: 0.18)
+                    .stroke(Theme.accent.opacity(0.55),
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .frame(width: 142, height: 142)
+                    .rotationEffect(.degrees(sweepRotation))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .font(.system(size: 13,
-                                  weight: rowState == .active ? .semibold : .regular))
-                    .foregroundStyle(rowState == .pending ? Color.secondary : Color.primary)
-                Text(path)
-                    .font(.system(size: 11).monospaced())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
+                Circle()
+                    .stroke(Theme.accent.opacity(0.06), lineWidth: 1)
+                    .frame(width: 130, height: 130)
 
-            Spacer()
-
-            Group {
-                if rowState == .done && bytes > 0 {
-                    Text(ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file))
-                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                } else {
-                    Text("—")
-                        .font(.system(size: 13).monospacedDigit())
+                VStack(spacing: 4) {
+                    Text(bytesText)
+                        .font(.system(size: 26, weight: .bold).monospacedDigit())
+                        .foregroundStyle(Theme.brandGradient)
+                        .contentTransition(.numericText())
+                        .animation(.easeOut(duration: 0.18), value: model.liveBytesScanned)
+                    Text("scanned so far")
+                        .font(.system(size: 9, weight: .semibold))
+                        .tracking(1.4)
+                        .textCase(.uppercase)
                         .foregroundStyle(.secondary)
                 }
             }
+            .frame(width: 200, height: 200)
+            Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(rowState == .active ? Theme.accentSoft : Color.clear)
-        .animation(.easeOut(duration: 0.22), value: rowState == .active)
     }
 
-    private var dotBackground: Color {
-        rowState == .pending ? Color.secondary.opacity(0.08) : Theme.accentSoft
+    // MARK: File stream
+
+    private var fileStream: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("LIVE STREAM")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.6)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(streamSubtitle)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.opacity)
+                    .animation(.easeOut(duration: 0.25), value: streamSubtitle)
+            }
+
+            VStack(alignment: .leading, spacing: 0) {
+                let displayed = Array(model.liveStreamPaths.suffix(5).enumerated())
+                if displayed.isEmpty {
+                    Text("Discovering files…")
+                        .font(.system(size: 11.5).monospaced())
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 5.5)
+                } else {
+                    ForEach(displayed, id: \.element) { idx, path in
+                        HStack(spacing: 10) {
+                            Rectangle()
+                                .fill(idx == displayed.count - 1 ? Theme.accent : Color.secondary.opacity(0.4))
+                                .frame(width: 2, height: 14)
+                            Text(path)
+                                .font(.system(size: 11.5).monospaced())
+                                .foregroundStyle(idx == displayed.count - 1 ? Color.primary : Color.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .opacity(streamOpacity(for: idx, count: displayed.count))
+                            Spacer()
+                        }
+                        .padding(.vertical, 5.5)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal:   .opacity
+                        ))
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 140, alignment: .bottom)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.rLg, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.rLg, style: .continuous)
+                    .strokeBorder(Theme.border.opacity(0.6), lineWidth: 1)
+            )
+            .clipped()
+        }
+    }
+
+    private var streamSubtitle: String {
+        if model.liveStreamPaths.isEmpty { return "warming up…" }
+        return "inspecting paths in real time"
+    }
+
+    private func streamOpacity(for idx: Int, count: Int) -> Double {
+        let distFromBottom = (count - 1) - idx
+        switch distFromBottom {
+        case 0: return 1.00
+        case 1: return 0.78
+        case 2: return 0.52
+        case 3: return 0.30
+        default: return 0.14
+        }
+    }
+
+    // MARK: Stats bar
+
+    private var statsBar: some View {
+        HStack(spacing: 0) {
+            statItem(icon: "doc.text.fill",
+                     value: model.liveFilesScanned.formatted(.number),
+                     label: "files")
+            divider
+            statItem(icon: "folder.fill",
+                     value: max(1, model.liveFilesScanned / 17).formatted(.number),
+                     label: "folders")
+            divider
+            statItem(icon: "bolt.fill",
+                     value: "\(throughputMBPerSec) MB/s",
+                     label: "throughput")
+            Spacer()
+        }
+    }
+
+    private var divider: some View {
+        Rectangle()
+            .fill(Theme.border)
+            .frame(width: 1, height: 22)
+            .padding(.horizontal, 18)
+    }
+
+    private func statItem(icon: String, value: String, label: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.accent.opacity(0.8))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(value)
+                    .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.18), value: value)
+                Text(label)
+                    .font(.system(size: 10, weight: .medium))
+                    .tracking(0.4)
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }

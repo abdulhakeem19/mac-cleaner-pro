@@ -16,16 +16,16 @@ import { SystemRequirements } from "@/components/SystemRequirements";
 import { TechMarquee } from "@/components/TechMarquee";
 
 export const metadata: Metadata = {
-  title: "Mac Cleaner Pro — Free Mac Disk Space & Cache Cleaner for macOS",
+  title: "Mac Cleaner Pro — See & Clean System Data on macOS · No Subscription",
   description:
-    "The best free mac cleaner for macOS. Clear caches, remove Xcode junk, uninstall apps completely, find large files. Native Swift. Privacy-first. 14-day trial.",
+    "Finally understand what's hiding in System Data — and clean it. Mac Cleaner Pro is the honest, pay-once CleanMyMac alternative. Native Swift, zero telemetry, 14-day free trial.",
   alternates: {
     canonical: "https://maccleanerpro.com/",
   },
   openGraph: {
-    title: "Mac Cleaner Pro — Free Mac Disk Space & Cache Cleaner for macOS",
+    title: "Mac Cleaner Pro — See & Clean System Data on macOS · No Subscription",
     description:
-      "Clear caches, remove Xcode junk, uninstall apps completely. Native Swift mac cleaner. 14-day free trial.",
+      "Finally understand what's hiding in System Data — and clean it. Mac Cleaner Pro is the honest, pay-once CleanMyMac alternative. Native Swift, zero telemetry, 14-day free trial.",
     url: "https://maccleanerpro.com/",
   },
 };

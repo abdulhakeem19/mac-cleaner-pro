@@ -199,26 +199,75 @@ struct UninstallerView: View {
                 if model.lastUndoToken != nil { undoBanner }
                 footer(app: app)
             } else {
-                VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(Theme.accentSoft)
-                            .frame(width: 72, height: 72)
-                        Image(systemName: "trash.square.fill")
-                            .font(.system(size: 30))
-                            .foregroundStyle(Theme.brandGradient)
-                    }
-                    Text("Select an app to uninstall")
-                        .font(.system(size: 15, weight: .semibold))
-                    Text("Pick any app from the list to see its files and leftovers.")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                emptyDetail
             }
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 24)
+    }
+
+    private var emptyDetail: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            // Compact header
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Theme.accentSoft)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Theme.accentRing, lineWidth: 1)
+                        )
+                        .frame(width: 52, height: 52)
+                    Image(systemName: "shippingbox")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("App Uninstaller")
+                        .font(.system(size: 22, weight: .semibold))
+                        .tracking(-0.3)
+                    Text("Remove apps and every file they leave behind.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
+            // Where leftovers live — info row
+            HStack(spacing: 10) {
+                LeftoverLocationTile(icon: "folder",          label: "Application Support")
+                LeftoverLocationTile(icon: "clock",           label: "Caches & Logs")
+                LeftoverLocationTile(icon: "gearshape",       label: "Preferences")
+                LeftoverLocationTile(icon: "shippingbox",     label: "Containers")
+            }
+
+            // Hint card
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Pick any app to begin")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("We scan 12 user-space locations for leftover files.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Theme.accentSoft.opacity(0.5))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Theme.accentRing.opacity(0.6), lineWidth: 1)
+            )
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private func detailHeader(app: AppRecord) -> some View {
@@ -345,6 +394,38 @@ struct UninstallerView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Theme.ok.opacity(0.34), lineWidth: 1)
+        )
+    }
+}
+
+/// Small tile shown in the empty detail pane to preview where leftovers
+/// typically hide.
+private struct LeftoverLocationTile: View {
+    let icon: String
+    let label: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Theme.accentSoft)
+                    .frame(width: 28, height: 28)
+                Image(systemName: icon)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+            }
+            Text(label)
+                .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Theme.border, lineWidth: 1)
         )
     }
 }

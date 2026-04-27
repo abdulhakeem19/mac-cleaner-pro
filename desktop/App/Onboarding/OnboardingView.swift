@@ -51,11 +51,11 @@ struct OnboardingView: View {
                 Text("Welcome to Mac Cleaner Pro")
                     .font(.system(size: 28, weight: .semibold))
                     .tracking(-0.6)
-                Text("Reclaim disk space safely.")
+                Text("Finally see what's hiding in System Data.")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(Theme.brandGradient)
             }
-            Text("Every action is reversible — files go to a staged trash you can restore from for 30 days.")
+            Text("Apple's storage panel hides System Data behind a single opaque number. We break it down rule-by-rule. Every clean is reversible — files stage to a Trash you can restore from for 30 days.")
                 .multilineTextAlignment(.center)
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -91,7 +91,7 @@ struct OnboardingView: View {
                 Spacer()
             }
 
-            Text("To find caches, logs, and app leftovers across your account, Mac Cleaner Pro needs Full Disk Access. Without it, scans miss most of what's reclaimable.")
+            Text("To break down System Data — caches, logs, developer artifacts, and app leftovers across your account — Mac Cleaner Pro needs Full Disk Access. Without it, scans miss most of what's reclaimable.")
                 .foregroundStyle(.secondary)
 
             VStack(alignment: .leading, spacing: 10) {
@@ -139,7 +139,7 @@ struct OnboardingView: View {
             }
             VStack(spacing: 6) {
                 Text("You're all set").font(.system(size: 28, weight: .semibold)).tracking(-0.6)
-                Text("Time to free up some space.")
+                Text("Time to demystify System Data.")
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
             }

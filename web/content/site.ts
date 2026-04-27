@@ -10,7 +10,7 @@
 
 export const brand = {
   name: "Mac Cleaner Pro",
-  tagline: "Reclaim disk space on your Mac — safely, locally, and pay-once.",
+  tagline: "The honest System Data cleaner for macOS — native Swift, pay-once, zero telemetry.",
   domain: "maccleanerpro.com",
   bundleId: "com.maccleanerpro",
   // Updated at every release.
@@ -26,13 +26,13 @@ export const hero = {
   headlineSubNum: "tens of GB",
   headlineSubAfter: "on your first scan.",
   description:
-    "A privacy-first performance analyzer & system cleaner, written in native Swift. No telemetry, no cloud uploads, no subscription. Just deep macOS integration and a single click.",
+    "Finally see what's hiding in System Data — and actually clean it. A privacy-first Mac cleaner written in native Swift. No telemetry, no cloud uploads, no subscription. The honest CleanMyMac alternative.",
   primaryCta: { label: "Download free · for macOS", href: "/download/" },
   secondaryCta: { label: "Watch Smart Scan", href: "/#scan" },
   bullets: [
     "14-day free trial",
     "Universal binary · Apple Silicon + Intel",
-    "Trash-first deletion · undoable for 30 days",
+    "System Data breakdown · Trash-first · 30-day undo",
   ],
   // Honest replacement for the "Trusted by 84,000 users · MacStories" strip:
   trustBlurb: "Built in public. Open about what's shipped and what's coming.",
@@ -61,7 +61,7 @@ export const smartScanDemo = {
   title: "Everything that's slowing you down.",
   titleGradient: "Found in seconds.",
   description:
-    "Smart Scan runs every cleanup module in parallel using Swift's structured concurrency. Helper-required system rules show up clearly so you always know what needs root.",
+    "14 cleanup rules — including a System Data breakdown — run in parallel Swift TaskGroups. No guessing what's eating your disk. See it, decide, clean it. Reverting any clean is one click.",
   stats: [
     { k: "Parallel", v: "Swift TaskGroup" },
     { k: "Local", v: "zero telemetry" },
@@ -74,7 +74,7 @@ export const smartScanDemo = {
     { t: "Browser caches", path: "Chrome · Firefox · Safari", found: "120 MB" },
     { t: "User logs", path: "~/Library/Logs/**", found: "1.9 MB" },
     { t: "App leftovers", path: "~/Library/Application Support", found: "scanning…" },
-    { t: "System caches", path: "/Library/Caches/*", found: "requires helper" },
+    { t: "System Data breakdown", path: "~/Library · /Library · SwiftUI caches", found: "identifying…" },
   ],
 } as const;
 
@@ -128,7 +128,7 @@ export const featuresGrid = {
 export const nativeEdge = {
   eyebrow: "The native Swift edge",
   titleA: "Most Mac cleaners are",
-  titleAccent: "wrappers around shell scripts.",
+  titleAccent: "visualize-only tools or subscription bloatware.",
   titleB: "Ours is built from the kernel up.",
   underTheHood: [
     { k: "Swift", v: "Structured concurrency · TaskGroup-parallel scans" },
@@ -139,6 +139,7 @@ export const nativeEdge = {
   ],
   // Truthful: things we have actually counted today.
   facts: [
+    { feat: "System Data breakdown", us: "included", them: "none" },
     { feat: "Lines of Swift", us: "~3,500", them: "—" },
     { feat: "Unit tests passing", us: "33 / 33", them: "—" },
     { feat: "External network calls", us: "0", them: "telemetry" },
@@ -276,6 +277,10 @@ export const faq = {
       a: "v1.0 is ad-hoc signed. Apple's notarization service requires a $99/yr Developer Program membership which we'll buy with our first month of revenue. Until then: right-click → Open once. After that, double-clicking works forever. Detailed instructions live at /install.",
     },
     {
+      q: "Does it explain what's in System Data?",
+      a: "Yes. System Data is macOS's catch-all bucket for caches, logs, app support files, and more that Apple's own storage panel hides behind a single opaque number. Mac Cleaner Pro's Smart Scan breaks it down rule-by-rule — user caches, system caches, browser caches, Xcode artifacts, app leftovers — and shows you exactly how many bytes each category holds before you decide to clean anything.",
+    },
+    {
       q: "How is this different from CleanMyMac or other cleaners?",
       a: "Three things. (1) We're indie and pay-once — no subscription. (2) We're radically transparent — this site lists exactly what's shipped and what isn't. (3) We're built in native Swift with structured concurrency from day one — no shell scripts wrapped in a GUI.",
     },
@@ -336,9 +341,9 @@ export const builtInPublic = {
 } as const;
 
 export const footerCta = {
-  title: "Free up gigabytes.",
-  titleGradient: "Get a faster Mac tonight.",
-  body: "14 days free. Then $39 once. That's it.",
+  title: "Stop guessing about System Data.",
+  titleGradient: "Clean it tonight.",
+  body: "14 days free. Then $39 once — not per year. No subscription. No CleanMyMac renewal.",
   primary: { label: "Download for macOS", href: "/download/" },
   secondary: { label: "See pricing", href: "/pricing/" },
 } as const;
