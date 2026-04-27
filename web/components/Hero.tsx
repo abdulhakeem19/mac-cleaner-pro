@@ -1,29 +1,20 @@
 "use client";
 
-import { m, useScroll, useTransform } from "framer-motion";
 import { PlayCircle } from "lucide-react";
 import { AppleLogo } from "./Logo";
 import Link from "next/link";
-import { useRef } from "react";
 import { hero } from "@/content/site";
 import { AppDashboard } from "./app-mockup/AppDashboard";
 import { AppWindow } from "./app-mockup/AppWindow";
 import { HeroStats } from "./HeroStats";
-import { BlurIn, FadeUp, ScaleUp } from "./Motion";
 
 export function Hero() {
-  const ref = useRef<HTMLElement>(null);
-  const { scrollY } = useScroll();
-  const orbA = useTransform(scrollY, [0, 600], [0, -120]);
-  const orbB = useTransform(scrollY, [0, 600], [0, -180]);
-
   return (
     <section
-      ref={ref}
       className="section noise pt-28 md:pt-40"
       style={{ paddingBottom: 80, position: "relative" }}
     >
-      <m.div
+      <div
         aria-hidden
         style={{
           position: "absolute",
@@ -34,11 +25,9 @@ export function Hero() {
           background: "radial-gradient(circle, rgba(10,132,255,0.35), transparent 70%)",
           filter: "blur(60px)",
           pointerEvents: "none",
-          willChange: "transform",
-          y: orbA,
         }}
       />
-      <m.div
+      <div
         aria-hidden
         style={{
           position: "absolute",
@@ -49,21 +38,30 @@ export function Hero() {
           background: "radial-gradient(circle, rgba(124,92,255,0.28), transparent 70%)",
           filter: "blur(80px)",
           pointerEvents: "none",
-          willChange: "transform",
-          y: orbB,
         }}
       />
 
       <div className="container-x relative text-center">
-        <BlurIn>
+        <div
+          className="hero-anim"
+          style={{ animationName: "hero-blur-in", animationDuration: "0.85s", animationDelay: "0s" }}
+        >
           <div className="eyebrow" style={{ marginBottom: 24 }}>
             <span className="eyebrow-dot" />
             {hero.eyebrow}
           </div>
-        </BlurIn>
+        </div>
 
-        {/* H1 renders immediately — no animation wrapper so LCP isn't delayed */}
-        <h1 className="h-display" style={{ maxWidth: 1000, margin: "0 auto" }}>
+        <h1
+          className="h-display hero-anim"
+          style={{
+            maxWidth: 1000,
+            margin: "0 auto",
+            animationName: "hero-fade-up",
+            animationDuration: "0.8s",
+            animationDelay: "0.05s",
+          }}
+        >
           {hero.headlineTop}{" "}
           <span className="gradient-text">{hero.headlineGradient}</span>
           <br />
@@ -74,16 +72,25 @@ export function Hero() {
           {hero.headlineSubAfter}
         </h1>
 
-        <FadeUp delay={1}>
-          <p
-            className="lede"
-            style={{ margin: "24px auto 0", fontSize: 20, textAlign: "center" }}
-          >
-            {hero.description}
-          </p>
-        </FadeUp>
+        {/* Lede — CSS fade-up so it's visible immediately at parse time (no JS needed → fast LCP) */}
+        <p
+          className="lede hero-anim"
+          style={{
+            margin: "24px auto 0",
+            fontSize: 20,
+            textAlign: "center",
+            animationName: "hero-fade-up",
+            animationDuration: "0.75s",
+            animationDelay: "0.1s",
+          }}
+        >
+          {hero.description}
+        </p>
 
-        <FadeUp delay={2}>
+        <div
+          className="hero-anim"
+          style={{ animationName: "hero-fade-up", animationDuration: "0.75s", animationDelay: "0.2s" }}
+        >
           <div
             className="flex flex-col sm:flex-row justify-center flex-wrap"
             style={{ gap: 12, marginTop: 34 }}
@@ -103,9 +110,12 @@ export function Hero() {
               <PlayCircle size={16} /> {hero.secondaryCta.label}
             </Link>
           </div>
-        </FadeUp>
+        </div>
 
-        <FadeUp delay={3}>
+        <div
+          className="hero-anim"
+          style={{ animationName: "hero-fade-up", animationDuration: "0.75s", animationDelay: "0.3s" }}
+        >
           <div
             style={{
               display: "flex",
@@ -121,13 +131,16 @@ export function Hero() {
               <span key={b}>✓ {b}</span>
             ))}
           </div>
-        </FadeUp>
+        </div>
 
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
           <HeroStats />
         </div>
 
-        <ScaleUp delay={4}>
+        <div
+          className="hero-anim"
+          style={{ animationName: "hero-scale-up", animationDuration: "0.9s", animationDelay: "0.35s" }}
+        >
           <div style={{ marginTop: 72, perspective: 2000 }}>
             <div
               style={{
@@ -153,14 +166,14 @@ export function Hero() {
               }}
             />
           </div>
-        </ScaleUp>
+        </div>
 
-        <FadeUp delay={5}>
-          <m.div
+        <div
+          className="hero-anim"
+          style={{ animationName: "hero-fade-in", animationDuration: "0.7s", animationDelay: "0.5s" }}
+        >
+          <div
             className="inline-flex items-center gap-3 mt-14 px-4 py-2 rounded-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 0.6 }}
             style={{
               background: "var(--surface)",
               border: "1px solid var(--border)",
@@ -181,8 +194,8 @@ export function Hero() {
               }}
             />
             <span>{hero.trustBlurb}</span>
-          </m.div>
-        </FadeUp>
+          </div>
+        </div>
       </div>
     </section>
   );

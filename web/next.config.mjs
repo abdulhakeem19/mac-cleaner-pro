@@ -8,6 +8,12 @@ const nextConfig = {
   // Trailing slashes keep static-host routing predictable.
   trailingSlash: true,
   reactStrictMode: true,
+  // Skip legacy polyfills — browserslist targets last 2 Chrome/Firefox/Safari/Edge.
+  // This eliminates the ~11 KiB Babel transform + Array/Object/String polyfill chunk
+  // that Lighthouse flags as unused legacy JavaScript.
+  experimental: {
+    browsersListForSwc: true,
+  },
 };
 
 export default nextConfig;

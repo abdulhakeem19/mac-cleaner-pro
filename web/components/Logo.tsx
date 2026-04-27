@@ -19,9 +19,10 @@ export function AppleLogo({ size = 16, className }: { size?: number; className?:
 export function LogoMark({ size = 28, priority = false }: { size?: number; priority?: boolean }) {
   return (
     <picture style={{ display: "block", flexShrink: 0, width: size, height: size }}>
-      <source srcSet="/mcp_logo_32.webp" type="image/webp" />
+      {/* mcp_logo.webp is 80×80 transparent — covers 3× retina at 26 px display */}
+      <source srcSet="/mcp_logo.webp" type="image/webp" />
       <img
-        src="/mcp_logo_32.png"
+        src="/mcp_logo.png"
         alt="Mac Cleaner Pro logo"
         width={size}
         height={size}

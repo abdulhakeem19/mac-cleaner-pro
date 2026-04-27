@@ -208,7 +208,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script
           id="ld-json"
           type="application/ld+json"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchemas) }}
         />
       </body>
