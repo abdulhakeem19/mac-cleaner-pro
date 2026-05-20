@@ -185,6 +185,7 @@ private struct EntryRow: View {
         case .clean: return "sparkles"
         case .undo:  return "arrow.uturn.backward"
         case .empty: return "xmark.bin"
+        case .freed: return "memorychip"
         }
     }
     private var color: Color {
@@ -192,6 +193,7 @@ private struct EntryRow: View {
         case .clean: return Theme.accent
         case .undo:  return Theme.ok
         case .empty: return Theme.bad
+        case .freed: return Theme.accent2
         }
     }
     private var headline: String {
@@ -200,17 +202,24 @@ private struct EntryRow: View {
         case .clean: verb = "Cleaned"
         case .undo:  verb = "Restored"
         case .empty: verb = "Permanently removed"
+        case .freed:
+            let where_ = sourceLabel(entry.source)
+            if entry.itemCount > 0 {
+                return "Freed memory · quit \(entry.itemCount) app\(entry.itemCount == 1 ? "" : "s") · \(where_)"
+            }
+            return "Freed memory · \(where_)"
         }
         let where_ = sourceLabel(entry.source)
         return "\(verb) \(entry.itemCount) item\(entry.itemCount == 1 ? "" : "s") · \(where_)"
     }
     private func sourceLabel(_ s: ActivityEntry.Source) -> String {
         switch s {
-        case .smartScan:   return "Smart Scan"
-        case .largeFiles:  return "Large Files"
-        case .uninstaller: return "Uninstaller"
-        case .manual:      return "Manual"
-        case .system:      return "System"
+        case .smartScan:     return "Smart Scan"
+        case .largeFiles:    return "Large Files"
+        case .uninstaller:   return "Uninstaller"
+        case .manual:        return "Manual"
+        case .system:        return "System"
+        case .memoryManager: return "Memory"
         }
     }
 }
