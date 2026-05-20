@@ -11,9 +11,9 @@ public struct ActivityEntry: Codable, Sendable, Identifiable, Hashable {
     public let tokenID: UUID?
     public let note: String?
 
-    public enum Kind: String, Codable, Sendable { case clean, undo, empty }
+    public enum Kind: String, Codable, Sendable { case clean, undo, empty, freed }
     public enum Source: String, Codable, Sendable {
-        case smartScan, largeFiles, uninstaller, manual, system
+        case smartScan, largeFiles, uninstaller, manual, system, memoryManager
     }
 
     public init(id: UUID = UUID(),

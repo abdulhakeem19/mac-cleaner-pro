@@ -2,7 +2,7 @@ import SwiftUI
 import Core
 
 private enum SidebarItem: String, CaseIterable, Hashable, Identifiable {
-    case smartScan, spaceLens, largeFiles, uninstaller, activityLog, settings
+    case smartScan, spaceLens, memoryManager, largeFiles, uninstaller, activityLog, settings
     #if DEBUG
     case helperSmokeTest
     #endif
@@ -13,6 +13,7 @@ private enum SidebarItem: String, CaseIterable, Hashable, Identifiable {
         switch self {
         case .smartScan:        return "Smart Scan"
         case .spaceLens:        return "Space Lens"
+        case .memoryManager:    return "Memory"
         case .largeFiles:       return "Large & Old Files"
         case .uninstaller:      return "App Uninstaller"
         case .activityLog:      return "Activity Log"
@@ -27,6 +28,7 @@ private enum SidebarItem: String, CaseIterable, Hashable, Identifiable {
         switch self {
         case .smartScan:        return "sparkles"
         case .spaceLens:        return "rectangle.grid.3x2"
+        case .memoryManager:    return "memorychip"
         case .largeFiles:       return "doc.text.magnifyingglass"
         case .uninstaller:      return "trash.square"
         case .activityLog:      return "clock.arrow.circlepath"
@@ -68,6 +70,7 @@ struct ContentView: View {
         switch selection ?? .smartScan {
         case .smartScan:        SmartScanView()
         case .spaceLens:        SpaceLensView()
+        case .memoryManager:    MemoryManagerView()
         case .largeFiles:       LargeFilesView()
         case .uninstaller:      UninstallerView()
         case .activityLog:      ActivityLogView()

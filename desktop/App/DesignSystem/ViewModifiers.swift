@@ -164,8 +164,9 @@ struct StatusChip: View {
 struct LogoMark: View {
     var size: CGFloat = 22
     var body: some View {
-        Image("mcp_logo")
+        Image(nsImage: NSApp.applicationIconImage)
             .resizable()
+            .interpolation(.high)
             .scaledToFit()
             .frame(width: size, height: size)
     }
