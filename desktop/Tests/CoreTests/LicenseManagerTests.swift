@@ -4,16 +4,25 @@ import Security
 
 final class LicenseManagerTests: XCTestCase {
 
+    // Real signed test fixture (signed with the embedded Ed25519 test keypair)
+    let validProKey = "MCP-dGVzdEBleGFtcGxlLmNvbXxwcm98MjAyNi0wNS0yNVQwNzoyNjowNS4zMDZafDE.y93pv9j0tCifKODbQfGcHlo1wVwl6gJvF0pZq06U1gV7pVVigtWW2LeTqYHCiCYgUbKX_Wo-dHx3F-Z0Q5SKDw"
+
     override func setUp() {
         super.setUp()
         UserDefaults.standard.removeObject(forKey: "MacCleanerPro.installDate")
         UserDefaults.standard.removeObject(forKey: "MacCleanerPro.licenseKey")
-        // Clear Keychain so each test starts with a fresh trial state
-        let q: [String: Any] = [
+        // Clear trial date Keychain entry
+        let trialQ: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
             kSecAttrService as String: "com.maccleanerpro",
         ]
-        SecItemDelete(q as CFDictionary)
+        SecItemDelete(trialQ as CFDictionary)
+        // Clear license storage Keychain entry so tests start with a clean slate
+        let licenseQ: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String: "com.maccleanerpro.license",
+        ]
+        SecItemDelete(licenseQ as CFDictionary)
     }
 
     func testFreshInstallStartsTrial() async {
@@ -26,9 +35,9 @@ final class LicenseManagerTests: XCTestCase {
         }
     }
 
-    func testStructurallyValidKeyUnlocksPro() async {
+    func testValidSignedKeyUnlocksPro() async {
         let mgr = LicenseManager()
-        let state = await mgr.setLicenseKey("MCP-ABCDEFGHIJKL")
+        let state = await mgr.setLicenseKey(validProKey)
         if case .pro = state {} else { XCTFail("expected pro, got \(state)") }
     }
 

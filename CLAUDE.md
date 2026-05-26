@@ -62,8 +62,37 @@ The repo currently ships in **$0-mode** (ad-hoc signed, not notarized, no privil
 
 - Trash staging: `~/.Trash/MacCleanerPro/<UUID>/` (30-day retention; tokens persist so Undo survives relaunch)
 - Activity log: `~/Library/Application Support/MacCleanerPro/activity.json`
-- License state: `UserDefaults` (key shape `MCP-XXXXXXXXXXXX`; validator is currently `isStructurallyValid` — Paddle Ed25519 verification is the post-launch swap)
+- License state: Keychain (`com.maccleanerpro.license` service via `SecureLicenseStorage`). The license key is Ed25519-verified before storage; a 7-day grace period allows offline use between 24-hour server revalidations.
 
 ## Web architecture
 
 Next.js 15 App Router, **static export** (`next build` → `web/out/`), so no server-side runtime. All marketing copy is centralized as a typed module in `web/content/site.ts` — change copy there, not in components. Pricing is dual-currency (USD + INR) with locale auto-detect. Animations honor `prefers-reduced-motion` via the helpers in `web/lib/motion.ts`.
+
+### Supabase database
+
+Schema lives in `web/supabase/migrations/001_initial_schema.sql` (two tables: `purchases`, `activations`). To apply it to a new project:
+
+```sh
+# Option A — Supabase CLI (from web/)
+supabase link --project-ref <your-project-ref>   # one-time
+supabase db push
+
+# Option B — Supabase dashboard
+# Open SQL Editor, paste the contents of migrations/001_initial_schema.sql, Run.
+```
+
+Required env vars (add to Netlify site settings and `web/.env.local` for dev):
+
+```
+SUPABASE_URL=https://<ref>.supabase.co
+SUPABASE_SERVICE_KEY=<service-role key>   # never expose client-side
+LICENSE_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----..."
+LICENSE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
+RAZORPAY_KEY_ID=rzp_live_...
+RAZORPAY_KEY_SECRET=...
+RAZORPAY_WEBHOOK_SECRET=...
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_...
+RESEND_API_KEY=re_...
+```
+
+Generate the Ed25519 keypair once with `node web/scripts/generate-keypair.js` and store the private key only in env vars — never commit it.

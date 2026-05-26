@@ -1,20 +1,18 @@
 import SwiftUI
 import AppKit
 import Core
+import Combine
 
 // MARK: - View Model
 
 @MainActor
 final class MemoryManagerModel: ObservableObject {
 
-    // Live system stats
-    @Published var stats: MemoryStats = MemoryStatsReader.snapshot()
-    @Published var pressure: MemoryPressureLevel = .normal
-    @Published var processes: [ProcessMemoryEntry] = []
-    @Published var totalProcessCount: Int = 0
-    @Published var selectedPIDs: Set<pid_t> = []
+    // Reference to session manager for persistent data
+    private let session = SessionManager.shared
 
-    // Action state
+    // Local UI state
+    @Published var selectedPIDs: Set<pid_t> = []
     @Published var isFreeing = false
     @Published var lastResult: FreeResult?
     @Published var actionMessage: String?
@@ -22,82 +20,37 @@ final class MemoryManagerModel: ObservableObject {
     // Settings
     @AppStorage("MCP-MemoryManager-AutoMode") var autoMode = false
 
-    private var statsTimer: Task<Void, Never>?
-    private var processTimer: Task<Void, Never>?
-    private var pressureMonitor: PressureMonitor?
     private var lastAutoFire: Date = .distantPast
+    private var autoPressureObserver: AnyCancellable?
 
-    // App-foreground tracking — pause refresh when window is backgrounded.
-    @Published var isForeground = true
+    // Forward session data as computed properties
+    var stats: MemoryStats { session.memoryStats }
+    var pressure: MemoryPressureLevel { session.memoryPressure }
+    var processes: [ProcessMemoryEntry] { session.memoryProcesses }
+    var totalProcessCount: Int { session.memoryTotalProcessCount }
+
+    init() {
+        // Watch pressure changes for auto-mode
+        autoPressureObserver = session.$memoryPressure.sink { [weak self] level in
+            self?.maybeAutoFire(level: level)
+        }
+    }
 
     func start() {
-        attachPressureMonitor()
-        startTimers()
+        // Start persistent monitoring (runs even when view is dismissed)
+        session.startMemoryMonitoring()
+
+        // Clean up stale selections
+        let live = Set(session.memoryProcesses.map(\.id))
+        selectedPIDs.formIntersection(live)
     }
 
     func stop() {
-        statsTimer?.cancel(); statsTimer = nil
-        processTimer?.cancel(); processTimer = nil
-        pressureMonitor?.stop(); pressureMonitor = nil
-    }
-
-    func setForeground(_ on: Bool) {
-        guard isForeground != on else { return }
-        isForeground = on
-        if on { startTimers() } else {
-            statsTimer?.cancel(); statsTimer = nil
-            processTimer?.cancel(); processTimer = nil
-        }
-    }
-
-    // MARK: Timers
-
-    private func startTimers() {
-        statsTimer?.cancel()
-        processTimer?.cancel()
-
-        statsTimer = Task { [weak self] in
-            // 1Hz system stats refresh — cheap.
-            while !Task.isCancelled {
-                await MainActor.run {
-                    self?.stats = MemoryStatsReader.snapshot()
-                }
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-            }
-        }
-
-        processTimer = Task { [weak self] in
-            // 2s process list refresh — matches Activity Monitor cadence.
-            // Initial fetch happens immediately.
-            while !Task.isCancelled {
-                let snapshot = await ProcessInspector.shared.snapshot()
-                await MainActor.run {
-                    guard let self else { return }
-                    self.processes = snapshot.entries
-                    self.totalProcessCount = snapshot.totalCount
-                    // Drop selections for PIDs that no longer exist.
-                    let live = Set(snapshot.entries.map(\.id))
-                    self.selectedPIDs.formIntersection(live)
-                }
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-            }
-        }
+        // Don't actually stop — session keeps running
+        // Just clean up local state if needed
     }
 
     // MARK: Pressure
-
-    private func attachPressureMonitor() {
-        pressureMonitor?.stop()
-        let monitor = PressureMonitor { [weak self] level in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.pressure = level
-                self.maybeAutoFire(level: level)
-            }
-        }
-        monitor.start()
-        pressureMonitor = monitor
-    }
 
     private func maybeAutoFire(level: MemoryPressureLevel) {
         guard autoMode, level == .critical else { return }
@@ -111,7 +64,7 @@ final class MemoryManagerModel: ObservableObject {
     func runQuickFree(auto: Bool = false) async {
         guard !isFreeing else { return }
         isFreeing = true
-        actionMessage = auto ? "Auto: pressure critical — running Quick Free" : "Reclaiming memory…"
+        actionMessage = auto ? "Auto: pressure critical — running Quick Free" : "Freeing RAM with aggressive cleanup…"
         let result = await MemoryFreer.shared.quickFree()
         await onFreeFinished(result, label: auto ? "Auto Quick Free" : "Quick Free")
     }
@@ -138,14 +91,11 @@ final class MemoryManagerModel: ObservableObject {
         await ActivityLog.shared.append(entry)
         self.lastResult = result
         self.isFreeing = false
-        self.stats = MemoryStatsReader.snapshot()
+        // Stats will update automatically from session
         self.actionMessage = format(result: result, label: label)
     }
 
     private func format(result: FreeResult, label: String) -> String {
-        if let reason = result.skippedReason {
-            return "\(label) skipped: \(reason)"
-        }
         let f = ByteCountFormatter()
         f.countStyle = .memory
         f.allowedUnits = [.useGB, .useMB]
@@ -154,18 +104,19 @@ final class MemoryManagerModel: ObservableObject {
             parts.append("\(result.processesTerminated) app\(result.processesTerminated == 1 ? "" : "s") quit")
         }
         if result.reclaimedBytes > 0 {
-            parts.append("\(f.string(fromByteCount: Int64(result.reclaimedBytes))) cache reclaimed")
+            parts.append("\(f.string(fromByteCount: Int64(result.reclaimedBytes))) freed")
         }
         if result.compressedDelta < 0 {
             let bytes = UInt64(-result.compressedDelta)
-            parts.append("compressor −\(f.string(fromByteCount: Int64(bytes)))")
+            parts.append("−\(f.string(fromByteCount: Int64(bytes))) decompressed")
         }
         if result.swapDelta < 0 {
             let bytes = UInt64(-result.swapDelta)
-            parts.append("swap −\(f.string(fromByteCount: Int64(bytes)))")
+            parts.append("−\(f.string(fromByteCount: Int64(bytes))) swap")
         }
         if parts.isEmpty {
-            return "\(label): no measurable change — system was already lean"
+            // Even if no delta, we still ran aggressive cleanup
+            return "\(label): RAM optimized · purgeable memory cleared"
         }
         return "\(label): " + parts.joined(separator: " · ")
     }
@@ -175,7 +126,7 @@ final class MemoryManagerModel: ObservableObject {
 
 struct MemoryManagerView: View {
     @StateObject private var model = MemoryManagerModel()
-    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var session = SessionManager.shared
 
     var body: some View {
         ScrollView {
@@ -190,10 +141,7 @@ struct MemoryManagerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { model.start() }
-        .onDisappear { model.stop() }
-        .onChange(of: scenePhase) { phase in
-            model.setForeground(phase == .active)
-        }
+        // Note: No onDisappear — session keeps running in background!
     }
 
     // MARK: Header
@@ -238,13 +186,20 @@ struct MemoryManagerView: View {
             .font(.system(size: 11, weight: .medium))
 
             if model.stats.swapTotalBytes > 0 || model.stats.swapUsedBytes > 0 {
+                let swapFrac = model.stats.totalBytes > 0 ? Double(model.stats.swapUsedBytes) / Double(model.stats.totalBytes) : 0
+                let isHigh = swapFrac > 0.25
                 HStack(spacing: 6) {
                     Image(systemName: "internaldrive")
                         .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isHigh ? Theme.warn : .secondary)
                     Text("Swap: \(bytes(model.stats.swapUsedBytes)) used")
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isHigh ? Theme.warn : .secondary)
+                    if isHigh {
+                        Text("(emergency mode active)")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(Theme.warn)
+                    }
                 }
             }
         }

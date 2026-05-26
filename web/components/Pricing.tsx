@@ -392,23 +392,9 @@ export function Pricing() {
                       window.location.href = "/download/";
                       return;
                     }
-                    setLoading(p.key);
-                    try {
-                      // India (INR) → Razorpay
-                      if (currency === "INR" && p.razorpayPlan) {
-                        const ok = await openRazorpay(p.razorpayPlan, p.name);
-                        if (ok) return;
-                      }
-                      // International (USD) → Paddle
-                      if (p.paddleProductId && typeof window !== "undefined" && window.Paddle) {
-                        window.Paddle.Checkout.open({ product: p.paddleProductId });
-                        return;
-                      }
-                      // Fallback — neither gateway configured
-                      window.location.href = "mailto:support@maccleanerpro.com?subject=Purchase%20Mac%20Cleaner%20Pro";
-                    } finally {
-                      setLoading(null);
-                    }
+
+                    // Redirect to checkout page with plan parameter
+                    window.location.href = `/checkout/?plan=${p.key}`;
                   }}
                 >
                   {loading === p.key ? "Opening checkout…" : p.cta}
