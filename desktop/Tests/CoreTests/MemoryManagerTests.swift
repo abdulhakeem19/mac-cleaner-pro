@@ -91,10 +91,10 @@ final class MemoryManagerTests: XCTestCase {
         XCTAssertEqual(n, 0)
     }
 
-    // MARK: - Swap-aware skip logic
+    // MARK: - Emergency mode (swap-aware strategy selection)
 
-    func testSwapSkipReasonTriggersOnHeavySwap() async {
-        // 8 GB total, 4 GB swap used → 50% > threshold.
+    func testEmergencyModeTriggersOnHeavySwap() async {
+        // 8 GB total, 4 GB swap used → 50% > 25% threshold → emergency.
         let s = MemoryStats(
             totalBytes: 8_000_000_000, activeBytes: 0, inactiveBytes: 100_000_000,
             wiredBytes: 0, compressedBytes: 0, speculativeBytes: 0,
@@ -102,11 +102,12 @@ final class MemoryManagerTests: XCTestCase {
             internalBytes: 0, swapUsedBytes: 4_000_000_000, swapTotalBytes: 4_000_000_000,
             pageSize: 16384
         )
-        let reason = await MemoryFreer.shared.swapSkipReason(stats: s)
-        XCTAssertNotNil(reason, "Soft-purge must skip when swap is heavy")
+        let isEmergency = await MemoryFreer.shared.isEmergencyMode(stats: s)
+        XCTAssertTrue(isEmergency, "Expected emergency mode when swap exceeds threshold")
     }
 
-    func testSwapSkipReasonClearOnHealthySystem() async {
+    func testEmergencyModeClearOnHealthySystem() async {
+        // 16 GB total, 0 swap → well below threshold → standard mode.
         let s = MemoryStats(
             totalBytes: 16_000_000_000, activeBytes: 0, inactiveBytes: 2_000_000_000,
             wiredBytes: 0, compressedBytes: 0, speculativeBytes: 0,
@@ -114,12 +115,12 @@ final class MemoryManagerTests: XCTestCase {
             internalBytes: 0, swapUsedBytes: 0, swapTotalBytes: 0,
             pageSize: 16384
         )
-        let reason = await MemoryFreer.shared.swapSkipReason(stats: s)
-        XCTAssertNil(reason, "Healthy system must allow soft-purge; got: \(reason ?? "")")
+        let isEmergency = await MemoryFreer.shared.isEmergencyMode(stats: s)
+        XCTAssertFalse(isEmergency, "Expected standard mode on a healthy system")
     }
 
-    func testSoftPurgeTargetCappedByCeiling() async {
-        // Plenty of headroom but ceiling should still clamp to 2 GB.
+    func testNormalPurgeTargetCappedByCeiling() async {
+        // 64 GB machine with 60 GB reclaimable — ceiling must clamp to maxNormalPurgeBytes.
         let s = MemoryStats(
             totalBytes: 64_000_000_000, activeBytes: 0,
             inactiveBytes: 30_000_000_000, wiredBytes: 0, compressedBytes: 0,
@@ -127,7 +128,7 @@ final class MemoryManagerTests: XCTestCase {
             externalBytes: 0, internalBytes: 0, swapUsedBytes: 0,
             swapTotalBytes: 0, pageSize: 16384
         )
-        let target = await MemoryFreer.shared.softPurgeTarget(stats: s)
-        XCTAssertLessThanOrEqual(target, MemoryFreer.maxSoftPurgeBytes)
+        let target = await MemoryFreer.shared.normalPurgeTarget(stats: s)
+        XCTAssertLessThanOrEqual(target, MemoryFreer.maxNormalPurgeBytes)
     }
 }

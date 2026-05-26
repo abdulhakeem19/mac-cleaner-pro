@@ -6,6 +6,7 @@ import Core
 final class SettingsModel: ObservableObject {
     @Published var licenseKey: String = ""
     @Published var licenseState: LicenseManager.State = .trial(daysRemaining: 14)
+    @Published var gracePeriodDaysLeft: Int? = nil
     @AppStorage("MacCleanerPro.telemetryEnabled") var telemetryEnabled = false
     @AppStorage("MacCleanerPro.crashReportsEnabled") var crashReportsEnabled = false
     @AppStorage("MacCleanerPro.autoUpdateEnabled") var autoUpdateEnabled = true
@@ -15,10 +16,18 @@ final class SettingsModel: ObservableObject {
     func refresh() {
         Task {
             let state = await LicenseManager.shared.currentState()
+            let graceDays: Int?
+            if case .pro = state {
+                graceDays = await SecureLicenseStorage.shared.gracePeriodDaysRemaining()
+            } else {
+                graceDays = nil
+            }
             await MainActor.run {
                 self.licenseState = state
+                self.gracePeriodDaysLeft = graceDays
                 if case .pro(let key) = state { self.licenseKey = key }
             }
+            await LicenseGate.shared.refresh()
         }
     }
 
@@ -27,6 +36,7 @@ final class SettingsModel: ObservableObject {
         Task {
             let state = await LicenseManager.shared.setLicenseKey(key)
             await MainActor.run { self.licenseState = state }
+            await LicenseGate.shared.refresh()
         }
     }
 
@@ -34,6 +44,7 @@ final class SettingsModel: ObservableObject {
         Task {
             let state = await LicenseManager.shared.clearLicense()
             await MainActor.run { self.licenseState = state; self.licenseKey = "" }
+            await LicenseGate.shared.refresh()
         }
     }
 
@@ -53,12 +64,21 @@ final class SettingsModel: ObservableObject {
 struct SettingsView: View {
     @StateObject private var model = SettingsModel()
     @EnvironmentObject private var theme: ThemeManager
+    @State private var showingActivation = false
+    @State private var showingDevices = false
 
     private var isTrialOrExpired: Bool {
         switch model.licenseState {
         case .trial, .expired: return true
         case .pro: return false
         }
+    }
+
+    private var currentLicenseKey: String? {
+        if case .pro(let key) = model.licenseState {
+            return key
+        }
+        return nil
     }
 
     @ViewBuilder private var buyLicenseButton: some View {
@@ -119,7 +139,7 @@ struct SettingsView: View {
                      title: "License",
                      subtitle: "Pay-once. No subscription.") {
             VStack(alignment: .leading, spacing: 14) {
-                LicenseStateBadge(state: model.licenseState)
+                LicenseStateBadge(state: model.licenseState, graceDaysLeft: model.gracePeriodDaysLeft)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("License key")
@@ -142,12 +162,32 @@ struct SettingsView: View {
                 }
 
                 HStack(spacing: 8) {
+                    Button("Activate") {
+                        showingActivation = true
+                    }
+                    .buttonStyle(GradientButtonStyle())
+
                     Button("Apply") { model.applyLicenseKey() }
-                        .buttonStyle(GradientButtonStyle(disabled: model.licenseKey.isEmpty))
+                        .buttonStyle(SoftButtonStyle())
                         .disabled(model.licenseKey.isEmpty)
+
                     Button("Clear") { model.clearLicense() }
                         .buttonStyle(SoftButtonStyle())
+                        .disabled(!isTrialOrExpired && model.licenseKey.isEmpty)
+
                     Spacer()
+
+                    // Show devices button (only when activated)
+                    if !isTrialOrExpired, let _ = currentLicenseKey {
+                        Button {
+                            showingDevices = true
+                        } label: {
+                            Label("Devices", systemImage: "laptopcomputer")
+                                .font(.system(size: 12, weight: .semibold))
+                        }
+                        .buttonStyle(SoftButtonStyle())
+                    }
+
                     Group {
                         if isTrialOrExpired {
                             buyLicenseButton.buttonStyle(GradientButtonStyle())
@@ -156,8 +196,19 @@ struct SettingsView: View {
                         }
                     }
                 }
+                .sheet(isPresented: $showingActivation) {
+                    LicenseActivationView()
+                        .onDisappear {
+                            model.refresh()
+                        }
+                }
+                .sheet(isPresented: $showingDevices) {
+                    if let key = currentLicenseKey {
+                        ActivatedDevicesView(licenseKey: key)
+                    }
+                }
 
-                Text("Payments processed by Paddle.")
+                Text("Payments processed by Razorpay. License validated offline with Ed25519.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -362,6 +413,8 @@ private struct AdvancedActionRow: View {
 
 private struct LicenseStateBadge: View {
     let state: LicenseManager.State
+    var graceDaysLeft: Int? = nil  // non-nil → Pro but offline/grace period
+
     var body: some View {
         HStack(spacing: 10) {
             ZStack {
@@ -392,34 +445,47 @@ private struct LicenseStateBadge: View {
         )
     }
 
+    private var isOffline: Bool { graceDaysLeft != nil }
+
     private var badgeColor: Color {
         switch state {
-        case .trial: return Theme.warn
-        case .pro: return Theme.ok
+        case .trial:   return Theme.warn
+        case .pro:     return isOffline ? Theme.warn : Theme.ok
         case .expired: return Theme.bad
         }
     }
+
     private var badgeIcon: String {
         switch state {
-        case .trial: return "hourglass"
-        case .pro: return "checkmark.seal.fill"
+        case .trial:   return "hourglass"
+        case .pro:     return isOffline ? "wifi.slash" : "checkmark.seal.fill"
         case .expired: return "exclamationmark.triangle.fill"
         }
     }
+
     private var badgeText: String {
         switch state {
         case .trial(let days): return "Trial — \(days) day\(days == 1 ? "" : "s") left"
-        case .pro: return "Pro license"
-        case .expired: return "Trial expired"
+        case .pro:             return isOffline ? "Pro · offline mode" : "Pro license"
+        case .expired:         return "Trial expired"
         }
     }
+
     private var badgeSub: String {
         switch state {
-        case .trial: return "Full access while you decide."
-        case .pro(let key): return redact(key)
-        case .expired: return "Enter a license to continue cleaning."
+        case .trial:
+            return "Full access while you decide."
+        case .pro(let key):
+            if let days = graceDaysLeft {
+                let plural = days == 1 ? "day" : "days"
+                return "Connect to the internet to revalidate · \(days) \(plural) remaining"
+            }
+            return redact(key)
+        case .expired:
+            return "Enter a license to continue cleaning."
         }
     }
+
     private func redact(_ key: String) -> String {
         guard key.count > 8 else { return key }
         return String(key.prefix(4)) + "…" + String(key.suffix(4))

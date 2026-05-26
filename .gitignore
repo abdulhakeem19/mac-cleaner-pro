@@ -4,6 +4,10 @@ keys/*
 !keys/rulepack_public.pem
 !keys/rulepack_public.b64
 
+# Session-generated AI docs — keep root clean
+/*.md
+!CLAUDE.md
+
 # XcodeGen output — project is generated from project.yml, don't commit.
 *.xcodeproj/
 
@@ -80,6 +84,12 @@ web/out/
 web/.turbo/
 web/.vercel/
 web/*.log
+web/.env.local
+web/.env*.local
+web/keys/
 
 # OS
 .DS_Store
+
+# Local Netlify folder
+.netlify

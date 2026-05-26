@@ -16,17 +16,49 @@ import { SystemRequirements } from "@/components/SystemRequirements";
 import { TechMarquee } from "@/components/TechMarquee";
 
 export const metadata: Metadata = {
-  title: "Mac Cleaner Pro — See & Clean System Data on macOS · No Subscription",
+  title: "Mac Cleaner Pro — Best Mac Cleaner & Disk Space Analyzer for macOS",
   description:
-    "Finally understand what's hiding in System Data — and clean it. Mac Cleaner Pro is the honest, pay-once CleanMyMac alternative. Native Swift, zero telemetry, 14-day free trial.",
+    "Clean Mac storage, free up disk space, and remove junk files on macOS. The best Mac cleaner app alternative to CleanMyMac. Find large files, duplicate files, and system junk. Native Mac space cleaner with no subscription.",
+  keywords: [
+    "mac cleaner",
+    "mac space cleaner",
+    "clean mac",
+    "disk space analyzer mac",
+    "cleanmymac alternative",
+    "mac storage cleaner",
+    "free up mac space",
+    "mac junk cleaner",
+    "duplicate file finder mac",
+    "large file finder mac",
+    "system cleaner mac",
+    "mac disk cleaner",
+    "optimize mac storage",
+    "mac cleanup app",
+    "best mac cleaner"
+  ],
   alternates: {
     canonical: "https://maccleanerpro.com/",
   },
   openGraph: {
-    title: "Mac Cleaner Pro — See & Clean System Data on macOS · No Subscription",
+    title: "Mac Cleaner Pro — Best Mac Cleaner & Disk Space Analyzer",
     description:
-      "Finally understand what's hiding in System Data — and clean it. Mac Cleaner Pro is the honest, pay-once CleanMyMac alternative. Native Swift, zero telemetry, 14-day free trial.",
+      "Clean Mac storage, free up disk space, and remove junk files. The best Mac cleaner app alternative to CleanMyMac. No subscription required.",
     url: "https://maccleanerpro.com/",
+    type: "website",
+    siteName: "Mac Cleaner Pro",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mac Cleaner Pro — Best Mac Cleaner & Disk Space Analyzer",
+    description: "Clean Mac storage, free up disk space, and remove junk files. Best CleanMyMac alternative.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
   },
 };
 

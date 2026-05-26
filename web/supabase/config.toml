@@ -1,0 +1,31 @@
+# Supabase CLI project configuration.
+# Get your project_id from: Supabase Dashboard → Project Settings → General → Reference ID
+# Then run from web/:  supabase link --project-ref <project_id>
+#                      supabase db push
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = false   # not used — all auth is via service-role key in Netlify functions

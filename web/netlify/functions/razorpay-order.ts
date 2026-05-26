@@ -1,9 +1,9 @@
 const RAZORPAY_KEY_ID     = process.env.RAZORPAY_KEY_ID     ?? "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET ?? "";
 
-const PLANS: Record<string, { amount: number; name: string }> = {
-  pro:    { amount: 329900, name: "Mac Cleaner Pro — 1 Mac"         }, // ₹3,299 in paise
-  family: { amount: 579900, name: "Mac Cleaner Pro — Family 5 Macs" }, // ₹5,799 in paise
+const PLANS: Record<string, { amount: number; name: string; machines: number }> = {
+  pro:    { amount: 329900, name: "Mac Cleaner Pro — 1 Mac",         machines: 1 }, // ₹3,299 in paise
+  family: { amount: 579900, name: "Mac Cleaner Pro — Family 5 Macs", machines: 5 }, // ₹5,799 in paise
 };
 
 // Netlify serverless handler — no @netlify/functions dep needed for basic JS exports
@@ -17,10 +17,17 @@ export const handler = async (event: { httpMethod: string; body: string | null }
   }
 
   let planKey: string;
+  let email: string;
   try {
-    planKey = JSON.parse(event.body ?? "{}").plan;
+    const body = JSON.parse(event.body ?? "{}");
+    planKey = body.plan;
+    email = body.email;
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid body" }) };
+  }
+
+  if (!email) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Email required" }) };
   }
 
   const plan = PLANS[planKey];
@@ -40,7 +47,11 @@ export const handler = async (event: { httpMethod: string; body: string | null }
       amount: plan.amount,
       currency: "INR",
       receipt: `mcp-${planKey}-${Date.now()}`,
-      notes: { plan: planKey },
+      notes: {
+        plan: planKey,
+        email: email,
+        machines: plan.machines.toString(),
+      },
     }),
   });
 
@@ -60,6 +71,7 @@ export const handler = async (event: { httpMethod: string; body: string | null }
       currency: order.currency,
       keyId: RAZORPAY_KEY_ID,
       name: plan.name,
+      email: email,
     }),
   };
 };

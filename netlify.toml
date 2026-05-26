@@ -51,15 +51,3 @@
   from   = "/download"
   to     = "/download/"
   status = 301
-
-# Razorpay order creation (called by Pricing.tsx buy buttons for INR users)
-[[redirects]]
-  from   = "/.netlify/functions/razorpay-order"
-  to     = "/.netlify/functions/razorpay-order"
-  status = 200
-
-# Paddle webhook placeholder (wire up when account is approved)
-# [[redirects]]
-#   from   = "/api/paddle-webhook"
-#   to     = "/.netlify/functions/paddle-webhook"
-#   status = 200
