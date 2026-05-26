@@ -19,6 +19,13 @@
     Referrer-Policy           = "strict-origin-when-cross-origin"
     Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    # CSP notes:
+    #   script-src 'unsafe-inline' — Next.js static export injects inline hydration scripts;
+    #     nonce-based CSP requires a server runtime which this static site does not have.
+    #   *.razorpay.com — Razorpay checkout JS, iframe, API, and logging all use subdomains.
+    #   font-src 'self' — next/font/google downloads fonts at build time; no runtime CDN calls.
+    #   frame-ancestors 'none' — duplicates X-Frame-Options for CSP-aware browsers.
+    Content-Security-Policy   = "default-src 'none'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.razorpay.com; font-src 'self'; connect-src 'self' https://*.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
 
 # --------------------------------------------------------------------------
 # Cache: immutable Next.js chunks (content-hashed filenames)
