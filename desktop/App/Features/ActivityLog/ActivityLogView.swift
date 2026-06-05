@@ -214,12 +214,13 @@ private struct EntryRow: View {
     }
     private func sourceLabel(_ s: ActivityEntry.Source) -> String {
         switch s {
-        case .smartScan:     return "Smart Scan"
-        case .largeFiles:    return "Large Files"
-        case .uninstaller:   return "Uninstaller"
-        case .manual:        return "Manual"
-        case .system:        return "System"
-        case .memoryManager: return "Memory"
+        case .smartScan:        return "Smart Scan"
+        case .largeFiles:       return "Large Files"
+        case .duplicateFinder:  return "Duplicates"
+        case .uninstaller:      return "Uninstaller"
+        case .manual:           return "Manual"
+        case .system:           return "System"
+        case .memoryManager:    return "Memory"
         }
     }
 }
