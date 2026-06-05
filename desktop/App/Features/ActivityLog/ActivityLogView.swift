@@ -37,7 +37,7 @@ struct ActivityLogView: View {
                 if model.entries.isEmpty {
                     emptyState
                 } else {
-                    VStack(spacing: 8) {
+                    LazyVStack(spacing: 8) {
                         ForEach(model.entries) { e in
                             EntryRow(entry: e)
                         }

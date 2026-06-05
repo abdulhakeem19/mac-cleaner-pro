@@ -54,9 +54,6 @@ struct ContentView: View {
             ZStack {
                 BackgroundOrbs()
                 detailContent
-                    .id(selection)                                  // forces cross-fade on tab switch
-                    .transition(.opacity.combined(with: .offset(y: 6)))
-                    .animation(.easeOut(duration: 0.25), value: selection)
             }
             .toolbar {
                 ToolbarItem(placement: .principal) { toolbarTitle }
@@ -237,6 +234,11 @@ struct BackgroundOrbs: View {
                     .blur(radius: 140)
                     .offset(x: geo.size.width * 0.30, y: geo.size.height * 0.30)
             }
+            // Rasterize the heavy blurs into one cached Metal layer so they
+            // aren't recomputed every time the detail content swaps on a tab
+            // switch. These orbs are purely decorative (no material/vibrancy),
+            // so flattening them is safe.
+            .drawingGroup()
         }
         .allowsHitTesting(false)
     }
