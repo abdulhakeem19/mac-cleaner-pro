@@ -7,6 +7,11 @@ final class SettingsModel: ObservableObject {
     @Published var licenseKey: String = ""
     @Published var licenseState: LicenseManager.State = .trial(daysRemaining: 14)
     @Published var gracePeriodDaysLeft: Int? = nil
+    @Published var isActivating = false
+    /// Inline result message shown under the key field after an Activate attempt.
+    @Published var activationMessage: String?
+    /// `true` when `activationMessage` describes a failure (render it red).
+    @Published var activationFailed = false
     @AppStorage("MacCleanerPro.telemetryEnabled") var telemetryEnabled = false
     @AppStorage("MacCleanerPro.crashReportsEnabled") var crashReportsEnabled = false
     @AppStorage("MacCleanerPro.autoUpdateEnabled") var autoUpdateEnabled = true
@@ -31,11 +36,27 @@ final class SettingsModel: ObservableObject {
         }
     }
 
-    func applyLicenseKey() {
-        let key = licenseKey
+    /// Validate the key the user typed and unlock Pro if it checks out.
+    /// Offline Ed25519 verification is authoritative; the result is reported
+    /// inline so no extra dialog is needed.
+    func activateLicenseKey() {
+        let key = licenseKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return }
+        isActivating = true
+        activationMessage = nil
         Task {
             let state = await LicenseManager.shared.setLicenseKey(key)
-            await MainActor.run { self.licenseState = state }
+            await MainActor.run {
+                self.isActivating = false
+                self.licenseState = state
+                if case .pro = state {
+                    self.activationFailed = false
+                    self.activationMessage = "License activated — Pro features unlocked."
+                } else {
+                    self.activationFailed = true
+                    self.activationMessage = "Not a valid license key."
+                }
+            }
             await LicenseGate.shared.refresh()
         }
     }
@@ -43,7 +64,12 @@ final class SettingsModel: ObservableObject {
     func clearLicense() {
         Task {
             let state = await LicenseManager.shared.clearLicense()
-            await MainActor.run { self.licenseState = state; self.licenseKey = "" }
+            await MainActor.run {
+                self.licenseState = state
+                self.licenseKey = ""
+                self.activationMessage = nil
+                self.activationFailed = false
+            }
             await LicenseGate.shared.refresh()
         }
     }
@@ -64,7 +90,6 @@ final class SettingsModel: ObservableObject {
 struct SettingsView: View {
     @StateObject private var model = SettingsModel()
     @EnvironmentObject private var theme: ThemeManager
-    @State private var showingActivation = false
     @State private var showingDevices = false
 
     private var isTrialOrExpired: Bool {
@@ -150,6 +175,12 @@ struct SettingsView: View {
                     TextField("MCP-XXXXXXXXXXXX", text: $model.licenseKey)
                         .textFieldStyle(.plain)
                         .font(.system(size: 13, design: .monospaced))
+                        .autocorrectionDisabled()
+                        .disabled(model.isActivating)
+                        .onChange(of: model.licenseKey) { _ in
+                            model.activationMessage = nil
+                        }
+                        .onSubmit { model.activateLicenseKey() }
                         .padding(10)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -159,21 +190,26 @@ struct SettingsView: View {
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .strokeBorder(Theme.border, lineWidth: 1)
                         )
+
+                    if let message = model.activationMessage {
+                        Label(message, systemImage: model.activationFailed
+                              ? "exclamationmark.triangle.fill"
+                              : "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(model.activationFailed ? Theme.bad : Theme.ok)
+                    }
                 }
 
                 HStack(spacing: 8) {
-                    Button("Activate") {
-                        showingActivation = true
+                    Button(model.isActivating ? "Activating…" : "Activate") {
+                        model.activateLicenseKey()
                     }
                     .buttonStyle(GradientButtonStyle())
-
-                    Button("Apply") { model.applyLicenseKey() }
-                        .buttonStyle(SoftButtonStyle())
-                        .disabled(model.licenseKey.isEmpty)
+                    .disabled(model.licenseKey.isEmpty || model.isActivating)
 
                     Button("Clear") { model.clearLicense() }
                         .buttonStyle(SoftButtonStyle())
-                        .disabled(!isTrialOrExpired && model.licenseKey.isEmpty)
+                        .disabled(model.licenseKey.isEmpty || model.isActivating)
 
                     Spacer()
 
@@ -195,12 +231,6 @@ struct SettingsView: View {
                             buyLicenseButton.buttonStyle(SoftButtonStyle())
                         }
                     }
-                }
-                .sheet(isPresented: $showingActivation) {
-                    LicenseActivationView()
-                        .onDisappear {
-                            model.refresh()
-                        }
                 }
                 .sheet(isPresented: $showingDevices) {
                     if let key = currentLicenseKey {
