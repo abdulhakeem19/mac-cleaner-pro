@@ -167,51 +167,75 @@ struct DeveloperJunkView: View {
     @StateObject private var model = DeveloperJunkModel()
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider().opacity(0.4)
-            content
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                header
+
+                if model.isScanning {
+                    liveProgress
+                } else if model.hasScanned && !model.artifacts.isEmpty {
+                    summaryLine
+                }
+
+                if let msg = model.actionMessage {
+                    undoBar(msg)
+                }
+
+                if !model.hasScanned && !model.isScanning {
+                    emptyState
+                } else if model.artifacts.isEmpty && !model.isScanning {
+                    cleanState
+                } else {
+                    LazyVStack(spacing: 10) {
+                        ForEach(model.artifacts) { artifact in
+                            DeveloperArtifactRow(
+                                artifact: artifact,
+                                isSelected: model.selected.contains(artifact.url),
+                                onToggle: { model.toggle(artifact.url) }
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 28)
+            .padding(.top, 28)
+            .padding(.bottom, hasSelectableResults ? 96 : 28)
         }
+        .scrollContentBackground(.hidden)
+        .safeAreaInset(edge: .bottom) {
+            if hasSelectableResults { footer }
+        }
+    }
+
+    private var hasSelectableResults: Bool {
+        model.hasScanned && !model.artifacts.isEmpty
     }
 
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Developer Junk")
-                        .font(.system(size: 22, weight: .bold))
-                    Text("Build output and dependency caches across your code folders — each one labelled with how to bring it back.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer()
-                if model.isScanning {
-                    Button("Cancel") { model.cancel() }
-                        .buttonStyle(.bordered)
-                } else {
-                    Button(model.hasScanned ? "Rescan" : "Scan") { model.scan() }
-                        .buttonStyle(.borderedProminent)
-                    Button { model.addFolder() } label: {
-                        Label("Add Folder", systemImage: "folder.badge.plus")
-                    }
-                    .buttonStyle(.bordered)
-                }
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Developer Junk")
+                    .font(.system(size: 22, weight: .bold))
+                Text("Build output and dependency caches across your code folders — each one labelled with how to bring it back.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
+            Spacer(minLength: 16)
             if model.isScanning {
-                liveProgress
-            } else if model.hasScanned {
-                summaryBar
-            }
-
-            if let msg = model.actionMessage {
-                undoBar(msg)
+                Button("Cancel") { model.cancel() }
+                    .buttonStyle(.bordered)
+            } else {
+                Button { model.addFolder() } label: {
+                    Label("Add Folder", systemImage: "folder.badge.plus")
+                }
+                .buttonStyle(.bordered)
+                Button(model.hasScanned ? "Rescan" : "Scan") { model.scan() }
+                    .buttonStyle(.borderedProminent)
             }
         }
-        .padding(20)
     }
 
     private var liveProgress: some View {
@@ -228,33 +252,16 @@ struct DeveloperJunkView: View {
             }
             Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.ultraThinMaterial))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.border, lineWidth: 1))
     }
 
-    private var summaryBar: some View {
-        HStack(spacing: 12) {
-            Text("\(model.artifacts.count) item\(model.artifacts.count == 1 ? "" : "s") · \(formattedDevSize(model.artifacts.reduce(0) { $0 &+ $1.size })) total")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-            Spacer()
-            if !model.artifacts.isEmpty {
-                Button("Select safe") { model.selectAll(safeOnly: true) }
-                    .buttonStyle(.link)
-                Button("Clear") { model.clearSelection() }
-                    .buttonStyle(.link)
-                Button {
-                    model.cleanSelected()
-                } label: {
-                    if model.isCleaning {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Text("Clean \(formattedDevSize(model.totalReclaimable))")
-                            .fontWeight(.semibold)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(model.selected.isEmpty || model.isCleaning)
-            }
-        }
+    private var summaryLine: some View {
+        Text("\(model.artifacts.count) item\(model.artifacts.count == 1 ? "" : "s") · \(formattedDevSize(model.artifacts.reduce(0) { $0 &+ $1.size })) reclaimable")
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
     }
 
     private func undoBar(_ msg: String) -> some View {
@@ -268,33 +275,43 @@ struct DeveloperJunkView: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.ok.opacity(0.1)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.ok.opacity(0.3), lineWidth: 1))
     }
 
-    // MARK: - Content
+    // MARK: - Floating footer (clean action)
 
-    @ViewBuilder
-    private var content: some View {
-        if !model.hasScanned && !model.isScanning {
-            emptyState
-        } else if model.artifacts.isEmpty && !model.isScanning {
-            cleanState
-        } else {
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(model.artifacts) { artifact in
-                        DeveloperArtifactRow(
-                            artifact: artifact,
-                            isSelected: model.selected.contains(artifact.url),
-                            onToggle: { model.toggle(artifact.url) }
-                        )
-                    }
+    private var footer: some View {
+        HStack(spacing: 12) {
+            Button("Select safe") { model.selectAll(safeOnly: true) }
+                .buttonStyle(.link)
+            Button("Clear") { model.clearSelection() }
+                .buttonStyle(.link)
+            Spacer()
+            Text("\(model.selected.count) selected")
+                .font(.system(size: 12).monospacedDigit())
+                .foregroundStyle(.secondary)
+            Button {
+                model.cleanSelected()
+            } label: {
+                if model.isCleaning {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text("Clean \(formattedDevSize(model.totalReclaimable))")
+                        .fontWeight(.semibold)
                 }
-                .padding(20)
             }
+            .buttonStyle(.borderedProminent)
+            .disabled(model.selected.isEmpty || model.isCleaning)
         }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 14)
+        .background(.ultraThinMaterial)
+        .overlay(Divider(), alignment: .top)
     }
+
+    // MARK: - Empty / clean states
 
     private var emptyState: some View {
         VStack(spacing: 14) {
@@ -312,8 +329,8 @@ struct DeveloperJunkView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(40)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
     }
 
     private var cleanState: some View {
@@ -325,8 +342,8 @@ struct DeveloperJunkView: View {
             Text("Nothing reclaimable under \(rootsLabel).")
                 .font(.system(size: 12)).foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(40)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
     }
 
     private var rootsLabel: String {
