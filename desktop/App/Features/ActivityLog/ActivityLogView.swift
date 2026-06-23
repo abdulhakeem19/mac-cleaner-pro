@@ -221,6 +221,7 @@ private struct EntryRow: View {
         case .manual:           return "Manual"
         case .system:           return "System"
         case .memoryManager:    return "Memory"
+        case .developerJunk:    return "Developer Junk"
         }
     }
 }

@@ -37,6 +37,8 @@ public struct RuleScanResult: Sendable, Identifiable {
     public let items: [ScanItem]
     public let totalSize: UInt64
     public let error: String?
+    /// Mirrors the rule's `restoreHint` so the UI can show "how to get it back".
+    public let restoreHint: String?
 
     public var id: String { ruleID }
 
@@ -47,7 +49,8 @@ public struct RuleScanResult: Sendable, Identifiable {
                 requiresHelper: Bool,
                 items: [ScanItem],
                 totalSize: UInt64,
-                error: String? = nil) {
+                error: String? = nil,
+                restoreHint: String? = nil) {
         self.ruleID = ruleID
         self.displayName = displayName
         self.category = category
@@ -56,6 +59,7 @@ public struct RuleScanResult: Sendable, Identifiable {
         self.items = items
         self.totalSize = totalSize
         self.error = error
+        self.restoreHint = restoreHint
     }
 }
 
@@ -133,7 +137,8 @@ public actor ScanEngine {
                 safety: rule.safety,
                 requiresHelper: true,
                 items: [],
-                totalSize: 0
+                totalSize: 0,
+                restoreHint: rule.restoreHint
             )
         }
 
@@ -161,7 +166,8 @@ public actor ScanEngine {
             safety: rule.safety,
             requiresHelper: false,
             items: items.sorted { $0.size > $1.size },
-            totalSize: total
+            totalSize: total,
+            restoreHint: rule.restoreHint
         )
     }
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "packVersion": "1.0.0",
-  "issuedAt": "2026-04-25T00:00:00Z",
+  "packVersion": "1.1.0",
+  "issuedAt": "2026-06-23T00:00:00Z",
   "minAppVersion": "1.0.0",
   "rules": [
     {
@@ -11,6 +11,7 @@
       "description": "App-specific cache files in your home Library. Apps regenerate these on next launch.",
       "safety": "safe",
       "requiresHelper": false,
+      "restoreHint": "Apps rebuild their caches automatically on next launch.",
       "paths": ["~/Library/Caches/*"],
       "excludes": [
         "~/Library/Caches/com.apple.Safari/Webpage Previews",
@@ -39,6 +40,7 @@
       "description": "System-level cache files. Requires the privileged helper.",
       "safety": "reviewRecommended",
       "requiresHelper": true,
+      "restoreHint": "Rebuilt automatically by macOS.",
       "paths": ["/Library/Caches/*"],
       "excludes": ["/Library/Caches/com.apple.aned"]
     },
@@ -49,6 +51,7 @@
       "description": "Application diagnostic logs in your home Library.",
       "safety": "safe",
       "requiresHelper": false,
+      "restoreHint": "Apps write fresh logs as needed.",
       "paths": ["~/Library/Logs/**/*"]
     },
     {
@@ -58,6 +61,7 @@
       "description": "Build intermediates Xcode regenerates on next build. Often 10+ GB for active developers.",
       "safety": "safe",
       "requiresHelper": false,
+      "restoreHint": "Regenerated on your next Xcode build.",
       "paths": ["~/Library/Developer/Xcode/DerivedData/*"]
     },
     {
@@ -67,6 +71,7 @@
       "description": "Symbol files for iOS versions older than the current major. Re-downloaded on demand.",
       "safety": "reviewRecommended",
       "requiresHelper": false,
+      "restoreHint": "Re-downloaded when you next attach a device on that iOS version.",
       "paths": ["~/Library/Developer/Xcode/iOS DeviceSupport/*"],
       "olderThanDays": 180
     },
@@ -77,8 +82,119 @@
       "description": "Old build archives. Recent ones are kept for crash symbolication.",
       "safety": "reviewRecommended",
       "requiresHelper": false,
+      "restoreHint": "Cannot be regenerated — only delete archives you no longer need to symbolicate.",
       "paths": ["~/Library/Developer/Xcode/Archives/*"],
       "olderThanDays": 180
+    },
+    {
+      "id": "xcode.coresimulator.caches",
+      "category": "developer",
+      "displayName": "iOS Simulator caches",
+      "description": "Simulator runtime caches. Does NOT touch your installed simulators or their data.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Rebuilt automatically when you next launch a simulator.",
+      "paths": ["~/Library/Developer/CoreSimulator/Caches/*"]
+    },
+    {
+      "id": "dev.npm.cache",
+      "category": "developer",
+      "displayName": "npm cache",
+      "description": "Downloaded npm package tarballs. Re-fetched from the registry when needed.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded on your next `npm install`.",
+      "paths": ["~/.npm/_cacache"]
+    },
+    {
+      "id": "dev.yarn.cache",
+      "category": "developer",
+      "displayName": "Yarn cache",
+      "description": "Downloaded Yarn package archives across all projects.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded on your next `yarn install`.",
+      "paths": ["~/Library/Caches/Yarn/*", "~/.yarn/cache"]
+    },
+    {
+      "id": "dev.gradle.caches",
+      "category": "developer",
+      "displayName": "Gradle build cache",
+      "description": "Cached dependencies and build outputs shared across Gradle projects.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded on your next Gradle build.",
+      "paths": ["~/.gradle/caches"]
+    },
+    {
+      "id": "dev.gradle.wrapper",
+      "category": "developer",
+      "displayName": "Gradle wrapper distributions",
+      "description": "Gradle binaries downloaded by the wrapper for each project's Gradle version.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded by the Gradle wrapper on next build.",
+      "paths": ["~/.gradle/wrapper/dists"]
+    },
+    {
+      "id": "dev.gradle.jdks",
+      "category": "developer",
+      "displayName": "Gradle-managed JDKs",
+      "description": "JDK toolchains auto-provisioned by Gradle.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded by Gradle toolchain provisioning when needed.",
+      "paths": ["~/.gradle/jdks"]
+    },
+    {
+      "id": "dev.android.cache",
+      "category": "developer",
+      "displayName": "Android SDK build cache",
+      "description": "Android build caches and incomplete SDK downloads.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Rebuilt or re-downloaded by Android Studio.",
+      "paths": ["~/.android/cache", "~/.android/build-cache"]
+    },
+    {
+      "id": "dev.android.avd",
+      "category": "developer",
+      "displayName": "Android emulators (AVDs)",
+      "description": "Each Android Virtual Device disk image. These belong to specific projects — review before removing.",
+      "safety": "reviewRecommended",
+      "requiresHelper": false,
+      "restoreHint": "Recreate in Android Studio → Device Manager.",
+      "paths": ["~/.android/avd/*"]
+    },
+    {
+      "id": "dev.pub.cache",
+      "category": "developer",
+      "displayName": "Dart/Flutter pub cache",
+      "description": "Global package store shared by all Flutter/Dart projects. Deleting forces re-download for every project.",
+      "safety": "reviewRecommended",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded on your next `flutter pub get`.",
+      "paths": ["~/.pub-cache/hosted", "~/.pub-cache/git"]
+    },
+    {
+      "id": "dev.maven",
+      "category": "developer",
+      "displayName": "Maven repository",
+      "description": "Local Maven dependency cache shared by all Java projects.",
+      "safety": "reviewRecommended",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded on your next Maven build.",
+      "paths": ["~/.m2/repository"]
+    },
+    {
+      "id": "dev.cocoapods.cache",
+      "category": "developer",
+      "displayName": "CocoaPods cache",
+      "description": "Downloaded pod specs and sources cached across projects.",
+      "safety": "safe",
+      "requiresHelper": false,
+      "restoreHint": "Re-downloaded on your next `pod install`.",
+      "paths": ["~/Library/Caches/CocoaPods/*"]
     },
     {
       "id": "browser.safari.cache",
@@ -87,6 +203,7 @@
       "description": "Cached web content. Doesn't affect bookmarks, history, or saved passwords.",
       "safety": "safe",
       "requiresHelper": false,
+      "restoreHint": "Safari re-caches pages as you browse.",
       "paths": ["~/Library/Caches/com.apple.Safari/*"]
     },
     {
@@ -96,6 +213,7 @@
       "description": "Cached web content for every Chrome profile.",
       "safety": "safe",
       "requiresHelper": false,
+      "restoreHint": "Chrome re-caches pages as you browse.",
       "paths": [
         "~/Library/Application Support/Google/Chrome/*/Cache",
         "~/Library/Application Support/Google/Chrome/*/Code Cache",
@@ -109,6 +227,7 @@
       "description": "Cached web content for every Firefox profile.",
       "safety": "safe",
       "requiresHelper": false,
+      "restoreHint": "Firefox re-caches pages as you browse.",
       "paths": ["~/Library/Caches/Firefox/Profiles/*/cache2"]
     },
     {
@@ -118,6 +237,7 @@
       "description": "Attachments downloaded by Mail.app. Originals remain on the server.",
       "safety": "reviewRecommended",
       "requiresHelper": false,
+      "restoreHint": "Re-download from the original message anytime.",
       "paths": ["~/Library/Containers/com.apple.mail/Data/Library/Mail Downloads/*"]
     }
   ]

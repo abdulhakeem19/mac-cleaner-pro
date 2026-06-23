@@ -2,7 +2,7 @@ import SwiftUI
 import Core
 
 private enum SidebarItem: String, CaseIterable, Hashable, Identifiable {
-    case smartScan, spaceLens, memoryManager, largeFiles, duplicateFinder, uninstaller, activityLog, settings
+    case smartScan, spaceLens, memoryManager, largeFiles, developerJunk, duplicateFinder, uninstaller, activityLog, settings
     #if DEBUG
     case helperSmokeTest
     #endif
@@ -15,6 +15,7 @@ private enum SidebarItem: String, CaseIterable, Hashable, Identifiable {
         case .spaceLens:        return "Space Lens"
         case .memoryManager:    return "Memory"
         case .largeFiles:       return "Large & Old Files"
+        case .developerJunk:    return "Developer Junk"
         case .duplicateFinder:  return "Duplicate Finder"
         case .uninstaller:      return "App Uninstaller"
         case .activityLog:      return "Activity Log"
@@ -31,6 +32,7 @@ private enum SidebarItem: String, CaseIterable, Hashable, Identifiable {
         case .spaceLens:        return "rectangle.grid.3x2"
         case .memoryManager:    return "memorychip"
         case .largeFiles:       return "doc.text.magnifyingglass"
+        case .developerJunk:    return "hammer"
         case .duplicateFinder:  return "doc.on.doc"
         case .uninstaller:      return "trash.square"
         case .activityLog:      return "clock.arrow.circlepath"
@@ -71,6 +73,7 @@ struct ContentView: View {
         case .spaceLens:        SpaceLensView()
         case .memoryManager:    MemoryManagerView()
         case .largeFiles:       LargeFilesView()
+        case .developerJunk:    DeveloperJunkView()
         case .duplicateFinder:  DuplicateFinderView()
         case .uninstaller:      UninstallerView()
         case .activityLog:      ActivityLogView()

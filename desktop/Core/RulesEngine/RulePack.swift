@@ -20,6 +20,22 @@ public struct RulePack: Codable, Sendable {
         public let paths: [String]
         public let excludes: [String]?
         public let olderThanDays: Int?
+        /// Optional one-liner telling the user how the data comes back (e.g.
+        /// "Re-downloaded on the next `npm install`"). Decoded as nil when absent.
+        public let restoreHint: String?
+
+        // Explicit init (with a defaulted `restoreHint`) so existing call sites
+        // that predate the field — including tests — keep compiling unchanged.
+        public init(id: String, category: Category, displayName: String,
+                    description: String, safety: Safety, requiresHelper: Bool,
+                    paths: [String], excludes: [String]? = nil,
+                    olderThanDays: Int? = nil, restoreHint: String? = nil) {
+            self.id = id; self.category = category; self.displayName = displayName
+            self.description = description; self.safety = safety
+            self.requiresHelper = requiresHelper; self.paths = paths
+            self.excludes = excludes; self.olderThanDays = olderThanDays
+            self.restoreHint = restoreHint
+        }
     }
 
     public enum Category: String, Codable, Sendable {

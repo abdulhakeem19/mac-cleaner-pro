@@ -13,7 +13,7 @@ public struct ActivityEntry: Codable, Sendable, Identifiable, Hashable {
 
     public enum Kind: String, Codable, Sendable { case clean, undo, empty, freed }
     public enum Source: String, Codable, Sendable {
-        case smartScan, largeFiles, duplicateFinder, uninstaller, manual, system, memoryManager
+        case smartScan, largeFiles, duplicateFinder, uninstaller, manual, system, memoryManager, developerJunk
     }
 
     public init(id: UUID = UUID(),
