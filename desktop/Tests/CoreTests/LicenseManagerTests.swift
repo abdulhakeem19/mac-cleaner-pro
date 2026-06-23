@@ -27,6 +27,9 @@ final class LicenseManagerTests: XCTestCase {
 
     func testFreshInstallStartsTrial() async {
         let mgr = LicenseManager()
+        // Defend against any license left in the login Keychain by the real app
+        // (the test bundle can read the same generic-password items).
+        _ = await mgr.clearLicense()
         let state = await mgr.currentState()
         if case .trial(let days) = state {
             XCTAssertEqual(days, 14)
@@ -48,12 +51,43 @@ final class LicenseManagerTests: XCTestCase {
     }
 
     func testExpiredAfterTrialWindow() async {
-        // Stamp install date 30 days ago.
+        // Clear any stored license directly (does NOT seed an install date the
+        // way currentState()/clearLicense() would).
+        await SecureLicenseStorage.shared.clearLicense()
+        deleteTrialDateKeychain()
+        // Stamp install date 30 days ago — with no Keychain trial date present,
+        // installDateOrSeed() falls back to this UserDefaults value.
         UserDefaults.standard.set(Date(timeIntervalSinceNow: -30 * 86_400),
                                   forKey: "MacCleanerPro.installDate")
         let mgr = LicenseManager()
         let state = await mgr.currentState()
         XCTAssertEqual(state, .expired)
+    }
+
+    private func deleteTrialDateKeychain() {
+        let q: [String: Any] = [
+            kSecClass as String:       kSecClassGenericPassword,
+            kSecAttrService as String: "com.maccleanerpro",
+        ]
+        SecItemDelete(q as CFDictionary)
+    }
+
+    // MARK: - Revalidation revocation policy
+
+    func testAuthoritativeRevocationIsDetected() {
+        XCTAssertTrue(LicenseManager.isAuthoritativeRevocation("License revoked"))
+        XCTAssertTrue(LicenseManager.isAuthoritativeRevocation("Order refunded"))
+        XCTAssertTrue(LicenseManager.isAuthoritativeRevocation("payment chargeback received"))
+        XCTAssertTrue(LicenseManager.isAuthoritativeRevocation("License disabled by admin"))
+    }
+
+    func testUnknownOrTransientErrorsAreNotRevocations() {
+        // These must NOT clear a cryptographically valid (e.g. self-issued/dev) license.
+        XCTAssertFalse(LicenseManager.isAuthoritativeRevocation(nil))
+        XCTAssertFalse(LicenseManager.isAuthoritativeRevocation(""))
+        XCTAssertFalse(LicenseManager.isAuthoritativeRevocation("License not found"))
+        XCTAssertFalse(LicenseManager.isAuthoritativeRevocation("Internal server error"))
+        XCTAssertFalse(LicenseManager.isAuthoritativeRevocation("limit reached"))
     }
 
     func testIsUnlockedDuringTrial() async {

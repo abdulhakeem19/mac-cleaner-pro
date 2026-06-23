@@ -89,6 +89,25 @@ public actor ActivationAPI {
         return response
     }
 
+    /// Background revalidation call. Unlike `activateLicense`, this does **not**
+    /// throw when the server reports `valid:false` — the caller needs to see the
+    /// verdict (and any `error` string) to distinguish an authoritative
+    /// revocation from a key the server simply doesn't recognize. It still throws
+    /// on genuine network / HTTP failures so the caller can stay offline-tolerant.
+    public func revalidate(
+        _ licenseKey: String,
+        deviceId: String,
+        deviceName: String
+    ) async throws -> ActivationResponse {
+        let request = VerifyRequest(
+            licenseKey: licenseKey,
+            deviceId: deviceId,
+            deviceName: deviceName,
+            action: "activate"
+        )
+        return try await makeRequest(request)
+    }
+
     /// Deactivate license on a specific device
     public func deactivateLicense(
         _ licenseKey: String,

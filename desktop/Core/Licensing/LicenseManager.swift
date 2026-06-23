@@ -45,8 +45,16 @@ public actor LicenseManager {
     // MARK: - Revalidation
 
     /// Re-checks the license with the server if 24 h have elapsed.
-    /// On network failure, honours the 7-day grace period; beyond that it
-    /// clears the stored license so the app reverts to expired state.
+    ///
+    /// The Ed25519 signature is the cryptographic root of trust and is verified
+    /// fully offline (see ``LicenseValidator``), so a stored license is only ever
+    /// *removed* here when the server **authoritatively revokes** it (refund,
+    /// chargeback, manual disable). We deliberately never clear a
+    /// cryptographically valid license just because the server is unreachable,
+    /// returns an error, or doesn't recognize the key — that would punish paying
+    /// customers who are offline and silently wipe self-issued / developer keys.
+    /// In those "couldn't confirm" cases we only flip the offline-mode flag (used
+    /// for non-blocking UI messaging) and keep the license.
     public func revalidateIfNeeded() async {
         guard let licenseData = await SecureLicenseStorage.shared.retrieveLicense() else { return }
         guard await SecureLicenseStorage.shared.needsRevalidation() else { return }
@@ -56,7 +64,7 @@ public actor LicenseManager {
 
         do {
             let api = ActivationAPI()
-            let response = try await api.activateLicense(
+            let response = try await api.revalidate(
                 licenseData.licenseKey,
                 deviceId: deviceId,
                 deviceName: deviceName
@@ -65,18 +73,27 @@ public actor LicenseManager {
             if response.valid {
                 await SecureLicenseStorage.shared.updateValidationTimestamp()
                 await SecureLicenseStorage.shared.setOfflineMode(false)
-            } else {
-                // Revoked or refunded — remove immediately
+            } else if Self.isAuthoritativeRevocation(response.error) {
+                // Server explicitly says this license was revoked/refunded.
                 await SecureLicenseStorage.shared.clearLicense()
+            } else {
+                // Server couldn't confirm the key (unknown to the backend, or a
+                // transient/environment mismatch). Keep the locally valid license.
+                await SecureLicenseStorage.shared.setOfflineMode(true)
             }
         } catch {
-            // Network unreachable — check grace period
-            let inGrace = await SecureLicenseStorage.shared.isInGracePeriod()
+            // Network / HTTP failure — stay offline-tolerant, never revoke.
             await SecureLicenseStorage.shared.setOfflineMode(true)
-            if !inGrace {
-                await SecureLicenseStorage.shared.clearLicense()
-            }
         }
+    }
+
+    /// Whether a server `valid:false` response is an *authoritative* revocation
+    /// (refund / chargeback / manual disable) as opposed to "the backend doesn't
+    /// know this key". Only authoritative revocations clear a stored license.
+    static func isAuthoritativeRevocation(_ error: String?) -> Bool {
+        guard let error = error?.lowercased() else { return false }
+        let revocationSignals = ["revoked", "refunded", "refund", "chargeback", "disabled", "deactivated"]
+        return revocationSignals.contains { error.contains($0) }
     }
 
     // MARK: - Migration
