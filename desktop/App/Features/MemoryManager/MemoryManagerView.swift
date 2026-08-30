@@ -128,7 +128,6 @@ struct MemoryManagerView: View {
     @StateObject private var model = MemoryManagerModel()
     @StateObject private var session = SessionManager.shared
     @StateObject private var gate = LicenseGate.shared
-    @State private var showExpiredSheet = false
 
     var body: some View {
         ScrollView {
@@ -145,38 +144,6 @@ struct MemoryManagerView: View {
         .onAppear { model.start() }
         .task { await gate.refresh() }
         // Note: No onDisappear — session keeps running in background!
-        .sheet(isPresented: $showExpiredSheet) {
-            VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.bad.opacity(0.12))
-                        .frame(width: 64, height: 64)
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(Theme.bad)
-                }
-                Text("Your trial has ended")
-                    .font(.system(size: 20, weight: .semibold))
-                Text("Get a license to continue cleaning — pay once, yours forever.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 280)
-                HStack(spacing: 10) {
-                    Button("Maybe later") { showExpiredSheet = false }
-                        .buttonStyle(SoftButtonStyle())
-                    Button("Buy Now") {
-                        if let url = URL(string: "https://maccleanerpro.com/pricing/") {
-                            NSWorkspace.shared.open(url)
-                        }
-                        showExpiredSheet = false
-                    }
-                    .buttonStyle(GradientButtonStyle())
-                }
-            }
-            .padding(32)
-            .frame(width: 380)
-        }
     }
 
     // MARK: Header
@@ -251,11 +218,7 @@ struct MemoryManagerView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
                 Button {
-                    if gate.canCleanNow {
-                        Task { await model.runQuickFree() }
-                    } else {
-                        showExpiredSheet = true
-                    }
+                    Task { await model.runQuickFree() }
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "wand.and.sparkles")
@@ -266,11 +229,7 @@ struct MemoryManagerView: View {
                 .disabled(model.isFreeing || !gate.canCleanNow)
 
                 Button {
-                    if gate.canCleanNow {
-                        Task { await model.quitSelected(force: false) }
-                    } else {
-                        showExpiredSheet = true
-                    }
+                    Task { await model.quitSelected(force: false) }
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "xmark.circle")
@@ -281,14 +240,6 @@ struct MemoryManagerView: View {
                 .disabled(model.isFreeing || model.selectedPIDs.isEmpty || !gate.canCleanNow)
 
                 Spacer()
-
-                if !gate.canCleanNow {
-                    Text(gate.lockReason)
-                        .font(.caption)
-                        .foregroundStyle(Theme.bad)
-                        .lineLimit(2)
-                        .frame(maxWidth: 240, alignment: .trailing)
-                }
 
                 Toggle(isOn: $model.autoMode) {
                     HStack(spacing: 6) {

@@ -28,11 +28,21 @@ struct MacCleanerProApp: App {
                         NSWorkspace.shared.open(url)
                     }
                 }
+                Button("View Source on GitHub") {
+                    if let url = URL(string: "https://github.com/vunexolabs/mac-cleaner-pro") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                Button("Report an Issue…") {
+                    if let url = URL(string: "https://github.com/vunexolabs/mac-cleaner-pro/issues/new") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
             }
             CommandGroup(after: .appInfo) {
                 Divider()
-                Button("Buy License…") {
-                    if let url = URL(string: "https://maccleanerpro.com/buy") {
+                Button("Sponsor Mac Cleaner Pro…") {
+                    if let url = URL(string: "https://github.com/sponsors/vunexolabs") {
                         NSWorkspace.shared.open(url)
                     }
                 }

@@ -106,14 +106,23 @@ struct SettingsView: View {
         return nil
     }
 
-    @ViewBuilder private var buyLicenseButton: some View {
-        Button {
-            if let url = URL(string: "https://maccleanerpro.com/pricing/") {
-                NSWorkspace.shared.open(url)
+    private static let sponsorLinks: [(label: String, systemImage: String, url: String)] = [
+        ("GitHub Sponsors", "heart.fill", "https://github.com/sponsors/vunexolabs"),
+        ("Open Collective", "banknote.fill", "https://opencollective.com/mac-cleaner-pro"),
+        ("Ko-fi", "cup.and.saucer.fill", "https://ko-fi.com/vunexolabs"),
+    ]
+
+    @ViewBuilder private var sponsorButtons: some View {
+        ForEach(Self.sponsorLinks, id: \.label) { link in
+            Button {
+                if let url = URL(string: link.url) {
+                    NSWorkspace.shared.open(url)
+                }
+            } label: {
+                Label(link.label, systemImage: link.systemImage)
+                    .font(.system(size: 12, weight: .semibold))
             }
-        } label: {
-            Label("Buy License", systemImage: "arrow.up.right")
-                .font(.system(size: 12, weight: .semibold))
+            .buttonStyle(SoftButtonStyle())
         }
     }
 
@@ -160,14 +169,24 @@ struct SettingsView: View {
     }
 
     private var licenseCard: some View {
-        SettingsCard(icon: "key.fill",
-                     title: "License",
-                     subtitle: "Pay-once. No subscription.") {
+        SettingsCard(icon: "heart.fill",
+                     title: "Support the project",
+                     subtitle: "Mac Cleaner Pro is free and open source — no license required.") {
             VStack(alignment: .leading, spacing: 14) {
                 LicenseStateBadge(state: model.licenseState, graceDaysLeft: model.gracePeriodDaysLeft)
 
+                Text("Donations fund the Apple Developer Program fee for notarization, server/hosting costs, and ongoing maintenance — this is a one-person project.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    sponsorButtons
+                }
+
+                Divider()
+
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("License key")
+                    Text("Legacy license key")
                         .font(.system(size: 11, weight: .semibold))
                         .tracking(1.0)
                         .textCase(.uppercase)
@@ -223,14 +242,6 @@ struct SettingsView: View {
                         }
                         .buttonStyle(SoftButtonStyle())
                     }
-
-                    Group {
-                        if isTrialOrExpired {
-                            buyLicenseButton.buttonStyle(GradientButtonStyle())
-                        } else {
-                            buyLicenseButton.buttonStyle(SoftButtonStyle())
-                        }
-                    }
                 }
                 .sheet(isPresented: $showingDevices) {
                     if let key = currentLicenseKey {
@@ -238,7 +249,7 @@ struct SettingsView: View {
                     }
                 }
 
-                Text("Payments processed by Razorpay. License validated offline with Ed25519.")
+                Text("Only needed if you bought a license before the project went open source — it's recognized offline via Ed25519, no purchase required otherwise.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -477,42 +488,41 @@ private struct LicenseStateBadge: View {
 
     private var isOffline: Bool { graceDaysLeft != nil }
 
+    // Mac Cleaner Pro is free and open source — trial/expired both just mean
+    // "no legacy license on file," so they render identically. Only `.pro`
+    // (a legacy pre-open-source purchase) gets distinct treatment, as a
+    // thank-you badge rather than a feature gate.
     private var badgeColor: Color {
         switch state {
-        case .trial:   return Theme.warn
-        case .pro:     return isOffline ? Theme.warn : Theme.ok
-        case .expired: return Theme.bad
+        case .trial, .expired: return Theme.ok
+        case .pro:              return isOffline ? Theme.warn : Theme.ok
         }
     }
 
     private var badgeIcon: String {
         switch state {
-        case .trial:   return "hourglass"
-        case .pro:     return isOffline ? "wifi.slash" : "checkmark.seal.fill"
-        case .expired: return "exclamationmark.triangle.fill"
+        case .trial, .expired: return "checkmark.seal.fill"
+        case .pro:              return isOffline ? "wifi.slash" : "heart.fill"
         }
     }
 
     private var badgeText: String {
         switch state {
-        case .trial(let days): return "Trial — \(days) day\(days == 1 ? "" : "s") left"
-        case .pro:             return isOffline ? "Pro · offline mode" : "Pro license"
-        case .expired:         return "Trial expired"
+        case .trial, .expired: return "Free & open source"
+        case .pro:              return isOffline ? "Supporter · offline mode" : "Supporter"
         }
     }
 
     private var badgeSub: String {
         switch state {
-        case .trial:
-            return "Full access while you decide."
+        case .trial, .expired:
+            return "No license required — every feature is unlocked."
         case .pro(let key):
             if let days = graceDaysLeft {
                 let plural = days == 1 ? "day" : "days"
                 return "Connect to the internet to revalidate · \(days) \(plural) remaining"
             }
             return redact(key)
-        case .expired:
-            return "Enter a license to continue cleaning."
         }
     }
 

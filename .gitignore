@@ -1,8 +1,10 @@
 # Rule-pack signing keys — private key MUST NEVER be committed.
-# Public key files are explicitly re-allowed below.
-keys/*
-!keys/rulepack_public.pem
-!keys/rulepack_public.b64
+# Public key files are explicitly re-allowed below. "**/keys/*" matches a keys/
+# directory at ANY depth (e.g. desktop/keys/) — a bare "keys/*" only matches at
+# the repo root, which is how the private key leaked into desktop/keys/ before.
+**/keys/*
+!**/keys/rulepack_public.pem
+!**/keys/rulepack_public.b64
 
 # Session-generated AI docs — keep root clean
 /*.md

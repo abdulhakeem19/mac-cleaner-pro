@@ -124,7 +124,6 @@ final class DuplicateFinderModel: ObservableObject {
 struct DuplicateFinderView: View {
     @StateObject private var model = DuplicateFinderModel()
     @StateObject private var gate = LicenseGate.shared
-    @State private var showExpiredSheet = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -141,7 +140,6 @@ struct DuplicateFinderView: View {
         .padding(.horizontal, 28)
         .padding(.vertical, 24)
         .task { await gate.refresh() }
-        .sheet(isPresented: $showExpiredSheet) { expiredSheet }
     }
 
     // MARK: Controls
@@ -296,16 +294,11 @@ struct DuplicateFinderView: View {
                 .animation(.easeInOut(duration: 0.4), value: model.totalSelectedBytes)
             }
             Spacer()
-            if !gate.canCleanNow {
-                Text(gate.lockReason)
-                    .font(.caption)
-                    .foregroundStyle(Theme.bad)
-            }
             Button("Smart Select") { model.applySmartSelect() }
                 .buttonStyle(SoftButtonStyle())
                 .help("Keep the newest copy of each duplicate, select the rest")
             Button {
-                if gate.canCleanNow { model.trashSelected() } else { showExpiredSheet = true }
+                model.trashSelected()
             } label: {
                 Label("Move to Trash", systemImage: "trash")
             }
@@ -340,35 +333,6 @@ struct DuplicateFinderView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Theme.ok.opacity(0.34), lineWidth: 1)
         )
-    }
-
-    // MARK: Expired sheet
-
-    private var expiredSheet: some View {
-        VStack(spacing: 20) {
-            ZStack {
-                Circle().fill(Theme.bad.opacity(0.12)).frame(width: 64, height: 64)
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 28)).foregroundStyle(Theme.bad)
-            }
-            Text("Your trial has ended")
-                .font(.system(size: 20, weight: .semibold))
-            Text("Get a license to continue cleaning — pay once, yours forever.")
-                .font(.callout).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center).frame(maxWidth: 280)
-            HStack(spacing: 10) {
-                Button("Maybe later") { showExpiredSheet = false }
-                    .buttonStyle(SoftButtonStyle())
-                Button("Buy Now") {
-                    if let url = URL(string: "https://maccleanerpro.com/pricing/") {
-                        NSWorkspace.shared.open(url)
-                    }
-                    showExpiredSheet = false
-                }
-                .buttonStyle(GradientButtonStyle())
-            }
-        }
-        .padding(32).frame(width: 380)
     }
 }
 

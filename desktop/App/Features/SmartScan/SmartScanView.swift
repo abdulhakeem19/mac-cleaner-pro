@@ -197,7 +197,6 @@ final class SmartScanModel: ObservableObject {
 struct SmartScanView: View {
     @StateObject private var model = SmartScanModel()
     @StateObject private var gate = LicenseGate.shared
-    @State private var showExpiredSheet = false
 
     var body: some View {
         ScrollView {
@@ -238,38 +237,6 @@ struct SmartScanView: View {
             }
         }
         .task { await gate.refresh() }
-        .sheet(isPresented: $showExpiredSheet) {
-            VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.bad.opacity(0.12))
-                        .frame(width: 64, height: 64)
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(Theme.bad)
-                }
-                Text("Your trial has ended")
-                    .font(.system(size: 20, weight: .semibold))
-                Text("Get a license to continue cleaning — pay once, yours forever.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 280)
-                HStack(spacing: 10) {
-                    Button("Maybe later") { showExpiredSheet = false }
-                        .buttonStyle(SoftButtonStyle())
-                    Button("Buy Now") {
-                        if let url = URL(string: "https://maccleanerpro.com/pricing/") {
-                            NSWorkspace.shared.open(url)
-                        }
-                        showExpiredSheet = false
-                    }
-                    .buttonStyle(GradientButtonStyle())
-                }
-            }
-            .padding(32)
-            .frame(width: 380)
-        }
     }
 
     // MARK: - Header
@@ -437,19 +404,8 @@ struct SmartScanView: View {
                 .animation(.easeInOut(duration: 0.5), value: model.totalReclaimable)
             }
             Spacer()
-            if !gate.canCleanNow {
-                Text(gate.lockReason)
-                    .font(.caption)
-                    .foregroundStyle(Theme.bad)
-                    .lineLimit(2)
-                    .frame(maxWidth: 280, alignment: .trailing)
-            }
             Button {
-                if gate.canCleanNow {
-                    model.cleanSelected()
-                } else {
-                    showExpiredSheet = true
-                }
+                model.cleanSelected()
             } label: {
                 HStack(spacing: 8) {
                     if model.isCleaning {

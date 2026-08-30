@@ -10,7 +10,7 @@
 
 export const brand = {
   name: "Mac Cleaner Pro",
-  tagline: "The honest System Data cleaner for macOS — native Swift, pay-once, zero telemetry.",
+  tagline: "The honest System Data cleaner for macOS — native Swift, free & open source, zero telemetry.",
   domain: "maccleanerpro.com",
   bundleId: "com.maccleanerpro",
   // Updated at every release.
@@ -30,7 +30,7 @@ export const hero = {
   primaryCta: { label: "Download free · for macOS", href: "/download/" },
   secondaryCta: { label: "Watch Smart Scan", href: "/#scan" },
   bullets: [
-    "14-day free trial",
+    "Free & open source — no license required",
     "Universal binary · Apple Silicon + Intel",
     "System Data breakdown · Trash-first · 30-day undo",
   ],
@@ -45,7 +45,7 @@ export const honestyCard = {
   body: [
     "Three flagship modules ship today: Smart Scan, Large & Old Files, and App Uninstaller — plus a tamper-evident Activity Log.",
     "Everything you delete goes to a staged trash you can undo from. The rules engine is signed and updateable separately from the app.",
-    "Some features (system-cache cleanup, malware scanner, Space Lens) need an Apple Developer Program signature, which we'll buy with our first month of revenue.",
+    "Some features (system-cache cleanup, malware scanner, Space Lens) need an Apple Developer Program signature — that's exactly what donations from the community go toward.",
   ],
   bullets: [
     "Three modules shipping today",
@@ -267,6 +267,36 @@ export const pricing = {
   ],
 };
 
+/**
+ * Support/donate section — Mac Cleaner Pro's desktop app is free and open
+ * source. Donations fund the concrete costs of running this as a
+ * one-person project: Apple's Developer Program fee (needed for
+ * notarization and a Mac App Store listing), server/hosting costs for the
+ * license/download backend, and ongoing maintenance time.
+ *
+ * TODO(maintainer): verify each handle/slug once the account exists —
+ * github.com/sponsors needs GitHub approval; open_collective/ko-fi need the
+ * project registered under the vunexolabs account first.
+ */
+export const support = {
+  eyebrow: "Support",
+  title: "Free, open source,",
+  titleGradient: "and community-funded.",
+  description:
+    "Mac Cleaner Pro doesn't have a paywall, a subscription, or telemetry to sell. If it's useful to you, donations go directly toward the Apple Developer Program fee, hosting, and keeping this maintained as a solo project.",
+  goals: [
+    { label: "Apple Developer Program", detail: "$99/yr — unlocks notarization + Mac App Store listing" },
+    { label: "Server & hosting", detail: "Licensing backend, downloads, email delivery" },
+    { label: "Maintenance", detail: "Bug fixes, new rule packs, new macOS versions" },
+  ],
+  links: [
+    { label: "GitHub Sponsors", href: "https://github.com/sponsors/vunexolabs" },
+    { label: "Open Collective", href: "https://opencollective.com/mac-cleaner-pro" },
+    { label: "Ko-fi", href: "https://ko-fi.com/vunexolabs" },
+  ],
+  sourceHref: "https://github.com/vunexolabs/mac-cleaner-pro",
+} as const;
+
 export const faq = {
   eyebrow: "FAQ",
   title: "Questions,",
@@ -274,7 +304,7 @@ export const faq = {
   items: [
     {
       q: "Why does macOS warn me on first launch?",
-      a: "v1.0 is ad-hoc signed. Apple's notarization service requires a $99/yr Developer Program membership which we'll buy with our first month of revenue. Until then: right-click → Open once. After that, double-clicking works forever. Detailed instructions live at /install.",
+      a: "v1.0 is ad-hoc signed. Apple's notarization service requires a $99/yr Developer Program membership, which is one of the things community donations go toward. Until then: right-click → Open once. After that, double-clicking works forever. Detailed instructions live at /install.",
     },
     {
       q: "Does it explain what's in System Data?",
@@ -350,7 +380,7 @@ export const footerCta = {
 
 export const footer = {
   blurb:
-    "An indie, native Mac performance analyzer and cleaner — built in public, sold pay-once.",
+    "An indie, native Mac performance analyzer and cleaner — free, open source, built in public.",
   cols: [
     { title: "Product", links: [
       { l: "Smart Scan", h: "/#scan" },

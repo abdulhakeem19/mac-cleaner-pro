@@ -52,19 +52,10 @@ final class LicenseGate: ObservableObject {
         }
     }
 
-    /// `true` when destructive actions should be allowed.
-    var canCleanNow: Bool {
-        switch state {
-        case .pro, .trial: return true
-        case .expired:     return false
-        }
-    }
+    /// Mac Cleaner Pro is free and open source — nothing gates destructive
+    /// actions. `state`/`gracePeriodDaysLeft` are kept for the optional
+    /// legacy "Pro" badge shown to pre-open-source purchasers in Settings.
+    var canCleanNow: Bool { true }
 
-    var lockReason: String {
-        switch state {
-        case .expired:
-            return "Trial expired — enter a license in Settings → License to continue cleaning."
-        default: return ""
-        }
-    }
+    var lockReason: String { "" }
 }
