@@ -202,6 +202,7 @@ struct DeveloperJunkView: View {
             .padding(.bottom, hasSelectableResults ? 96 : 28)
         }
         .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .safeAreaInset(edge: .bottom) {
             if hasSelectableResults { footer }
         }

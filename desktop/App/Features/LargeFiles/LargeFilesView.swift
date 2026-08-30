@@ -136,6 +136,7 @@ struct LargeFilesView: View {
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .task { await gate.refresh() }
     }
 

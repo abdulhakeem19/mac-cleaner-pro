@@ -228,6 +228,7 @@ struct SmartScanView: View {
             .animation(.easeOut(duration: 0.25), value: model.scanDisplayActive)
         }
         .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .safeAreaInset(edge: .bottom) {
             // Footer is hidden on the initial empty state — nothing to clean,
             // nothing to report. It re-appears once results exist or a scan

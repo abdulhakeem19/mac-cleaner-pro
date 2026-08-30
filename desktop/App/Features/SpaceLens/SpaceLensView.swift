@@ -159,6 +159,7 @@ struct SpaceLensView: View {
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     // MARK: Header

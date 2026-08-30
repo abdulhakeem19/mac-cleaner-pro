@@ -48,6 +48,7 @@ struct ActivityLogView: View {
             .padding(.vertical, 24)
         }
         .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onAppear { model.reload() }
     }
 
