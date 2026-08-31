@@ -35,7 +35,7 @@ export function Footer() {
                 <AppleLogo size={14} /> Download
               </Link>
               <Link
-                href="https://github.com/abdulhakeem19/maccleanerpro"
+                href="https://github.com/vunexolabs/mac-cleaner-pro"
                 className="btn btn-ghost"
                 style={{ padding: "10px 14px", fontSize: 13 }}
               >
@@ -61,6 +61,8 @@ export function Footer() {
                   <li key={l.l}>
                     <Link
                       href={l.h}
+                      target={l.h.startsWith("http") ? "_blank" : undefined}
+                      rel={l.h.startsWith("http") ? "noopener noreferrer" : undefined}
                       style={{ fontSize: 14, color: "var(--text-dim)" }}
                     >
                       {l.l}

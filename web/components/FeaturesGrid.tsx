@@ -3,9 +3,12 @@
 import {
   Activity,
   ArrowUpFromDot,
+  BadgeCheck,
   Clock as ClockArrowDown,
   Copy,
+  Cpu,
   FileSignature,
+  Hammer,
   Layers,
   Search,
   ShieldAlert,
@@ -31,6 +34,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Activity,
   Layers,
   ShieldAlert,
+  Hammer,
+  Cpu,
+  BadgeCheck,
 };
 
 export function FeaturesGrid() {

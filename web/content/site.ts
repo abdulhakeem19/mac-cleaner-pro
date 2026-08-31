@@ -80,10 +80,10 @@ export const smartScanDemo = {
 
 export const featuresGrid = {
   eyebrow: "Capabilities",
-  title: "Three modules.",
-  titleGradient: "One surface.",
+  title: "Eight modules.",
+  titleGradient: "One free, open-source app.",
   description:
-    "Everything you'd run manually — bundled into a single native app that knows when to ask, when to defer, and when to just do it.",
+    "Everything you'd run manually — bundled into a single native app that knows when to ask, when to defer, and when to just do it. Every line of it is on GitHub.",
   groups: [
     {
       color: "#0A84FF",
@@ -93,13 +93,25 @@ export const featuresGrid = {
       feats: [
         { icon: "Sparkles", t: "Smart Scan", d: "10+ rules across caches, logs, dev artifacts, browsers." },
         { icon: "Search", t: "Large & Old Files", d: "Walk any folder by size and age. Quick Look any match." },
+        { icon: "Hammer", t: "Developer Junk", d: "Finds node_modules, DerivedData, .gradle and more — each one labelled with how to bring it back." },
         { icon: "Trash2", t: "App Uninstaller", d: "Find leftovers across 12 user-space locations per app." },
+      ],
+    },
+    {
+      color: "#30D158",
+      number: "02",
+      title: "See where your space goes",
+      desc: "Shipped today — not on a roadmap.",
+      feats: [
+        { icon: "Layers", t: "Space Lens", d: "Treemap + sunburst of every byte on disk. Drill in, reclaim out." },
+        { icon: "Copy", t: "Duplicate Finder", d: "Hash-based with smart auto-select — keeps the newest copy by default." },
+        { icon: "Cpu", t: "Memory Manager", d: "Live RAM gauge, top-consumer list, Quick Free, Quit Selected." },
         { icon: "ClockArrowDown", t: "Activity Log", d: "Every clean and undo is auditable from one screen." },
       ],
     },
     {
       color: "#7C5CFF",
-      number: "02",
+      number: "03",
       title: "Built-in safety nets",
       desc: "Designed so the worst case is mildly inconvenient — never destructive.",
       feats: [
@@ -110,16 +122,15 @@ export const featuresGrid = {
       ],
     },
     {
-      color: "#30D158",
-      number: "03",
+      color: "#FF9F0A",
+      number: "04",
       title: "On the roadmap",
-      desc: "Real features in active development. No dates promised — only direction.",
+      desc: "Real features in active direction — funded by community donations, not on a fixed date.",
       comingSoon: true,
       feats: [
-        { icon: "Copy", t: "Duplicate Finder", d: "Hash-based with smart auto-select. Photos, docs, downloads." },
         { icon: "Activity", t: "Menubar Agent", d: "Live disk + memory tile, click to scan." },
-        { icon: "Layers", t: "Space Lens", d: "Treemap of every byte on disk. Drill in, reclaim out." },
         { icon: "ShieldAlert", t: "Malware Scanner", d: "Daily-updated YARA rules. Local scanning, no cloud." },
+        { icon: "BadgeCheck", t: "Notarized, App Store-ready builds", d: "Needs the paid Apple Developer Program — exactly what donations fund." },
       ],
     },
   ],
@@ -175,7 +186,7 @@ export const security = {
   eyebrow: "Fully local · privacy-first",
   title: "Your Mac's data never leaves your Mac.",
   body: "All scanning, hashing, and analysis runs on-device. Zero telemetry. The only outbound call is checking for app updates — and you can disable that.",
-  honestyLine: "v1.0 is ad-hoc signed. Notarization comes with our first paid Apple Developer membership.",
+  honestyLine: "v1.0 is ad-hoc signed. Notarization needs the paid Apple Developer Program — funded by community donations.",
   badges: ["Zero telemetry", "Local-only scan", "Open scope"],
 } as const;
 
@@ -303,6 +314,10 @@ export const faq = {
   titleGradient: "answered honestly.",
   items: [
     {
+      q: "Is Mac Cleaner Pro really free now? What happened to the paid version?",
+      a: "Yes — it's free and open source (MIT license) as of the latest release. There's no trial, no license key, and no feature gate. If you bought a license before the switch, it still works and shows as \"Supporter\" in Settings — nothing changes for you. Development is now funded by voluntary donations (GitHub Sponsors, Open Collective, Ko-fi) instead of sales.",
+    },
+    {
       q: "Why does macOS warn me on first launch?",
       a: "v1.0 is ad-hoc signed. Apple's notarization service requires a $99/yr Developer Program membership, which is one of the things community donations go toward. Until then: right-click → Open once. After that, double-clicking works forever. Detailed instructions live at /install.",
     },
@@ -312,7 +327,7 @@ export const faq = {
     },
     {
       q: "How is this different from CleanMyMac or other cleaners?",
-      a: "Three things. (1) We're indie and pay-once — no subscription. (2) We're radically transparent — this site lists exactly what's shipped and what isn't. (3) We're built in native Swift with structured concurrency from day one — no shell scripts wrapped in a GUI.",
+      a: "Three things. (1) It's free and open source (MIT) — no subscription, no license key, and you can read every line on GitHub. (2) We're radically transparent — this site lists exactly what's shipped and what isn't. (3) We're built in native Swift with structured concurrency from day one — no shell scripts wrapped in a GUI.",
     },
     {
       q: "Is it safe to clean system files?",
@@ -328,11 +343,11 @@ export const faq = {
     },
     {
       q: "What happens to my license when notarization arrives?",
-      a: "Your license keeps working. You get a notarized build via the same auto-update channel. Nothing to re-buy, no migration steps.",
+      a: "Your Supporter badge keeps working exactly as before. Notarized builds roll out to everyone — licensed or not — via the same update channel. Nothing to re-buy, no migration steps.",
     },
     {
-      q: "Can I get a refund?",
-      a: "30 days, no questions asked. Email us and you'll get a full refund within one business day.",
+      q: "Can I get a refund for a license I already bought?",
+      a: "If you purchased before Mac Cleaner Pro went free and open source: yes, within 30 days of your original purchase, no questions asked — email us. New downloads don't need a refund since there's nothing to buy.",
     },
   ],
 } as const;
@@ -353,8 +368,8 @@ export const systemReq = {
 
 export const builtInPublic = {
   eyebrow: "Built in public",
-  title: "Eight weeks. Three modules. Counting.",
-  description: "Every milestone from spec to ship — visible.",
+  title: "Eight modules. Fully open source. Counting.",
+  description: "Every milestone from spec to ship to open-sourced — visible.",
   milestones: [
     { week: "Week 1", title: "CI + signing pipeline", state: "done" },
     { week: "Week 2", title: "Privileged helper + XPC bridge", state: "done" },
@@ -362,20 +377,21 @@ export const builtInPublic = {
     { week: "Week 4", title: "Trash + Undo + Activity Log", state: "done" },
     { week: "Week 5", title: "Large & Old Files + Quick Look", state: "done" },
     { week: "Week 6", title: "App Uninstaller + leftover finder", state: "done" },
-    { week: "Week 7", title: "Onboarding + license + Settings", state: "done" },
-    { week: "Week 8", title: "v1.0 ship — DMG + landing page", state: "current" },
-    { week: "Week 9+", title: "Apple Developer cert + notarization", state: "next" },
-    { week: "Week 10+", title: "Duplicate Finder", state: "next" },
-    { week: "Week 12+", title: "Menubar Agent", state: "next" },
+    { week: "Week 7", title: "v1.0 ship — DMG + landing page", state: "done" },
+    { week: "Week 8", title: "Space Lens, Memory Manager, Duplicate Finder", state: "done" },
+    { week: "Week 9", title: "Developer Junk scanner", state: "done" },
+    { week: "Week 10", title: "Open sourced under MIT — free for everyone", state: "current" },
+    { week: "Next", title: "Apple Developer cert + notarization (donation-funded)", state: "next" },
+    { week: "Next", title: "Menubar Agent + Malware Scanner", state: "next" },
   ],
 } as const;
 
 export const footerCta = {
   title: "Stop guessing about System Data.",
-  titleGradient: "Clean it tonight.",
-  body: "14 days free. Then $39 once — not per year. No subscription. No CleanMyMac renewal.",
+  titleGradient: "Clean it tonight — free.",
+  body: "Free forever. No trial, no subscription, no license key. MIT-licensed and open source on GitHub — donations keep it maintained.",
   primary: { label: "Download for macOS", href: "/download/" },
-  secondary: { label: "See pricing", href: "/pricing/" },
+  secondary: { label: "Support the project", href: "/support/" },
 } as const;
 
 export const footer = {
@@ -390,11 +406,12 @@ export const footer = {
     ]},
     { title: "Help", links: [
       { l: "Install guide", h: "/install/" },
-      { l: "Pricing", h: "/pricing/" },
+      { l: "Support", h: "/support/" },
       { l: "FAQ", h: "/#faq" },
       { l: "Contact", h: "/contact/" },
     ]},
     { title: "Company", links: [
+      { l: "Open Source (GitHub)", h: "https://github.com/vunexolabs/mac-cleaner-pro" },
       { l: "Built in public", h: "/#timeline" },
       { l: "Terms", h: "/terms/" },
       { l: "Privacy", h: "/privacy/" },
@@ -408,7 +425,8 @@ export const nav = {
   links: [
     { l: "Features", h: "/#features" },
     { l: "Smart Scan", h: "/#scan" },
-    { l: "Pricing", h: "/pricing/" },
+    { l: "Open Source", h: "https://github.com/vunexolabs/mac-cleaner-pro" },
+    { l: "Support", h: "/support/" },
     { l: "FAQ", h: "/#faq" },
     { l: "Install", h: "/install/" },
   ],

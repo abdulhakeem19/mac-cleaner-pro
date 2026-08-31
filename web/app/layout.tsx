@@ -5,7 +5,7 @@ import { ThemeProvider, themeBootScript } from "@/components/ThemeProvider";
 import { MotionProvider } from "@/components/MotionProvider";
 import { PaddleScript } from "@/components/PaddleScript";
 import { RazorpayScript } from "@/components/RazorpayScript";
-import { brand, faq, pricing } from "@/content/site";
+import { brand, faq } from "@/content/site";
 import "./globals.css";
 
 const geist = Geist({
@@ -23,11 +23,11 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(`https://${brand.domain}`),
   title: {
-    default: `${brand.name} — Best Mac Disk Space Cleaner for macOS`,
+    default: `${brand.name} — Free, Open Source Mac Cleaner for macOS`,
     template: `%s · ${brand.name}`,
   },
   description:
-    `${brand.name} is the honest CleanMyMac alternative for macOS. Finally see what's inside System Data, clear caches, remove Xcode junk, uninstall apps completely. Native Swift, privacy-first, pay-once.`,
+    `${brand.name} is a free, open source (MIT) CleanMyMac alternative for macOS. Finally see what's inside System Data, clear caches, remove Xcode junk, find duplicates, uninstall apps completely. Native Swift, privacy-first, no subscription, no license key. Source on GitHub.`,
   applicationName: brand.name,
   authors: [{ name: brand.name }],
   keywords: [
@@ -35,15 +35,25 @@ export const metadata: Metadata = {
     "mac cleaner",
     "mac cleaner pro",
     "best mac cleaner",
+    "free mac cleaner",
+    "open source mac cleaner",
     "mac disk cleaner",
     "mac space cleaner",
     "mac storage cleaner",
     "mac cache cleaner",
-    "free mac cleaner",
     "mac cleaning app",
     "mac junk cleaner",
     "clean mac disk space",
     "free up disk space mac",
+    // Open source cluster
+    "open source mac app",
+    "open source macos utility",
+    "mac cleaner github",
+    "mit license mac app",
+    "open source disk cleaner",
+    "swift open source macos app",
+    "free and open source mac cleaner",
+    "self hosted mac cleaner",
     // Secondary
     "mac disk space optimizer",
     "macos cleaner app",
@@ -55,8 +65,13 @@ export const metadata: Metadata = {
     "mac cleanup utility",
     "mac disk space analyzer",
     "mac performance optimizer",
+    "duplicate file finder mac",
+    "memory manager mac",
+    "treemap disk usage mac",
     // Long-tail
     "xcode derived data cleaner mac",
+    "developer junk cleaner mac",
+    "node_modules cleaner mac",
     "uninstall apps mac completely",
     "mac large file finder",
     "mac old file cleaner",
@@ -65,10 +80,10 @@ export const metadata: Metadata = {
     "indie mac cleaner",
     "privacy mac cleaner",
     "no subscription mac cleaner",
-    "pay once mac cleaner",
+    "free mac cleaner no subscription",
     "mac cleaner without subscription",
     "alternative to cleanmymac",
-    "mac disk cleaner free trial",
+    "cleanmymac free alternative",
     "best free mac cleaner 2025",
     "mac disk space full",
     // System Data + competitor-alternative cluster (research-validated)
@@ -97,9 +112,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: brand.name,
-    title: `${brand.name} — Best Mac Disk Space Cleaner for macOS`,
+    title: `${brand.name} — Free, Open Source Mac Cleaner for macOS`,
     description:
-      `${brand.name} is the honest CleanMyMac alternative for macOS. Finally see what's inside System Data, clear caches, remove Xcode junk, uninstall apps completely. Native Swift, privacy-first, pay-once.`,
+      `${brand.name} is a free, open source (MIT) CleanMyMac alternative for macOS. Finally see what's inside System Data, clear caches, remove Xcode junk, find duplicates, uninstall apps completely. Native Swift, privacy-first, no subscription. Source on GitHub.`,
     url: `https://${brand.domain}`,
     locale: "en_US",
   },
@@ -123,31 +138,37 @@ const jsonLdSchemas = [
     applicationSubCategory: "DiskCleaner",
     operatingSystem: "macOS 13+",
     description:
-      "Privacy-first Mac disk cleaner. Free up disk space, clear caches, remove Xcode DerivedData, uninstall apps with leftover removal. Native Swift, no telemetry, pay-once.",
+      "Free, open source (MIT) Mac disk cleaner. Free up disk space, clear caches, remove Xcode DerivedData and dependency junk, find duplicates, uninstall apps with leftover removal. Native Swift, no telemetry, no subscription.",
     url: `https://${brand.domain}`,
     downloadUrl: `https://${brand.domain}/download/`,
     softwareVersion: brand.version,
     releaseNotes: `https://${brand.domain}/changelog/`,
     screenshot: `https://${brand.domain}/opengraph-image.png`,
+    license: "https://github.com/vunexolabs/mac-cleaner-pro/blob/main/LICENSE",
+    isAccessibleForFree: true,
     featureList: [
       "Smart Scan — one-click disk cleanup",
       "Large & Old File Finder",
+      "Developer Junk scanner (node_modules, DerivedData, .gradle)",
+      "Duplicate Finder — hash-based with smart auto-select",
+      "Space Lens — treemap + sunburst disk visualizer",
+      "Memory Manager — live RAM gauge and Quick Free",
       "App Uninstaller with leftover removal",
-      "Xcode DerivedData cleaner",
       "Browser cache cleaner (Chrome, Safari, Firefox)",
       "System and user cache cleaner",
       "Trash-first deletion with 30-day undo",
       "Activity log",
       "No telemetry, fully on-device",
+      "Free and open source (MIT license)",
     ],
-    offers: pricing.plans.map((p) => ({
+    offers: {
       "@type": "Offer",
-      name: p.name,
-      price: p.usd.replace("$", ""),
+      name: "Mac Cleaner Pro",
+      price: "0",
       priceCurrency: "USD",
-      description: p.key === "free" ? `${pricing.trialDays}-day free trial` : p.usdSub,
+      description: "Free and open source — no license required",
       availability: "https://schema.org/InStock",
-    })),
+    },
     publisher: {
       "@type": "Organization",
       name: brand.name,

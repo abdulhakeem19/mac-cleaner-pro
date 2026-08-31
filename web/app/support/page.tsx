@@ -4,17 +4,14 @@ import { Nav } from "@/components/Nav";
 import { Support } from "@/components/Support";
 import { brand } from "@/content/site";
 
-// Mac Cleaner Pro went free + open source (MIT) — there's no paid pricing
-// anymore. This route is kept (instead of removed) so old links/bookmarks
-// to /pricing/ don't 404; it renders the same content as /support/.
 export const metadata: Metadata = {
-  title: "Mac Cleaner Pro is Free & Open Source",
+  title: "Support Mac Cleaner Pro — Free & Open Source",
   description:
-    "Mac Cleaner Pro no longer has a paid tier — it's free and open source (MIT). Support development via GitHub Sponsors, Open Collective, or Ko-fi.",
+    "Mac Cleaner Pro is free and open source (MIT). Donations via GitHub Sponsors, Open Collective, or Ko-fi fund the Apple Developer Program fee, hosting, and ongoing maintenance.",
   alternates: { canonical: `https://${brand.domain}/support/` },
 };
 
-export default function PricingPage() {
+export default function SupportPage() {
   return (
     <>
       <Nav />

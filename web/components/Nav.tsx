@@ -82,6 +82,8 @@ export function Nav() {
             <Link
               key={l.h}
               href={l.h}
+              target={l.h.startsWith("http") ? "_blank" : undefined}
+              rel={l.h.startsWith("http") ? "noopener noreferrer" : undefined}
               className="px-3 py-2 rounded-full transition-colors hover:text-(--text)"
               style={{ transition: "background .2s var(--ease), color .2s var(--ease)" }}
             >
@@ -95,11 +97,11 @@ export function Nav() {
           {/* Desktop-only CTAs — wrapper div hides both reliably despite .btn { display: inline-flex } */}
           <div className="hidden md:flex gap-2 items-center">
             <Link
-              href="/pricing/"
+              href="/support/"
               className="btn btn-ghost"
               style={{ fontSize: 13, padding: "8px 14px" }}
             >
-              License
+              Support
             </Link>
             <Link
               href="/download/"
@@ -186,6 +188,8 @@ export function Nav() {
                   <Link
                     href={l.h}
                     onClick={close}
+                    target={l.h.startsWith("http") ? "_blank" : undefined}
+                    rel={l.h.startsWith("http") ? "noopener noreferrer" : undefined}
                     className="flex items-center px-3 py-2.5 rounded-xl text-sm transition-colors hover:bg-(--surface-lo) hover:text-(--text)"
                     style={{ color: "var(--text-dim)" }}
                   >
@@ -206,12 +210,12 @@ export function Nav() {
               className="flex flex-col gap-2"
             >
               <Link
-                href="/pricing/"
+                href="/support/"
                 onClick={close}
                 className="btn btn-ghost"
                 style={{ fontSize: 13, justifyContent: "center" }}
               >
-                License
+                Support
               </Link>
               <Link
                 href="/download/"

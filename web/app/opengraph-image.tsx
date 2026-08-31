@@ -105,7 +105,7 @@ export default function OG() {
               display: "flex",
             }}
           >
-            Privacy-first. Pay once.
+            Privacy-first. Free & open source.
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export default function OG() {
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <div>Native Swift -- macOS 13+ -- Apple Silicon &amp; Intel</div>
-            <div>14-day trial -- 30-day refund -- zero telemetry</div>
+            <div>MIT licensed -- no subscription -- zero telemetry</div>
           </div>
           <div
             style={{
