@@ -1,0 +1,39 @@
+name: Bug report
+description: Something in the app isn't working as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Smart Scan
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: "Help → About Mac Cleaner Pro, e.g. 1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version + chip (Apple Silicon / Intel)
+      placeholder: "e.g. macOS 15.1, Apple Silicon"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / screenshots
+      description: Console.app logs, or a screenshot, if applicable.

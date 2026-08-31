@@ -1,0 +1,35 @@
+# Rule-pack signing keys — private key MUST NEVER be committed.
+# Public key files are explicitly re-allowed below. "**/keys/*" matches a keys/
+# directory at ANY depth — a bare "keys/*" only matches at the repo root.
+**/keys/*
+!**/keys/rulepack_public.pem
+!**/keys/rulepack_public.b64
+
+# XcodeGen output — project is generated from project.yml, don't commit.
+*.xcodeproj/
+
+# Xcode
+xcuserdata/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+.build/
+.swiftpm
+
+# CocoaPods / Carthage (unused today, harmless if adopted later)
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Build output
+/out
+
+# OS
+.DS_Store

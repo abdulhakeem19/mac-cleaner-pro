@@ -1,0 +1,7 @@
+# These power the "Sponsor" button on GitHub.
+# TODO(maintainer): verify each handle/slug once the account is created —
+# github.com/sponsors application needs approval, open_collective/ko_fi need
+# the org/handle to be registered under vunexolabs first.
+github: [vunexolabs]
+open_collective: mac-cleaner-pro
+ko_fi: vunexolabs

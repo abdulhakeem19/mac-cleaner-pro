@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an idea for the app
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to see?
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        For larger features, it's worth skimming CONTRIBUTING.md — for bigger
+        changes I'd rather discuss the approach here before a PR lands.

@@ -1,0 +1,698 @@
+import SwiftUI
+import AppKit
+import Core
+
+@MainActor
+final class SpaceLensModel: ObservableObject {
+    @Published var root: URL = URL(fileURLWithPath: NSHomeDirectory())
+    @Published var tree: SpaceLensNode?
+    @Published var path: [SpaceLensNode] = []      // breadcrumb stack from root → current focus
+    @Published var isScanning = false
+    @Published var bytesScanned: UInt64 = 0
+    @Published var currentScanPath: String = ""
+    @Published var selected: SpaceLensNode?
+    @Published var hovering: SpaceLensNode?
+    @Published var actionMessage: String?
+    @Published var lastUndoToken: UndoToken?
+
+    private let scanner = SpaceLensScanner()
+    private let deletion = DeletionService.shared
+    private var task: Task<Void, Never>?
+
+    var current: SpaceLensNode? { path.last ?? tree }
+
+    func chooseRoot() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = root
+        if panel.runModal() == .OK, let url = panel.url {
+            root = url
+            tree = nil
+            path = []
+            selected = nil
+        }
+    }
+
+    func scan() {
+        task?.cancel()
+        isScanning = true
+        bytesScanned = 0
+        currentScanPath = ""
+        selected = nil
+        path = []
+        let target = root
+        task = Task { [scanner, weak self] in
+            let result = await scanner.scan(root: target) { [weak self] progress in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.bytesScanned = progress.bytesScanned
+                    self.currentScanPath = Self.tildify(progress.currentPath)
+                }
+            }
+            await MainActor.run {
+                guard let self else { return }
+                self.tree = result
+                self.isScanning = false
+                self.bytesScanned = result.size
+            }
+        }
+    }
+
+    func cancel() {
+        task?.cancel()
+        isScanning = false
+    }
+
+    /// Drill into a directory node (push onto the breadcrumb stack).
+    func drill(into node: SpaceLensNode) {
+        guard node.isDirectory, !node.children.isEmpty else { return }
+        path.append(node)
+        selected = nil
+    }
+
+    /// Pop the breadcrumb to a specific level (root index = -1, first push = 0…).
+    func navigate(toIndex index: Int) {
+        if index < 0 {
+            path.removeAll()
+        } else if index < path.count {
+            path = Array(path.prefix(index + 1))
+        }
+        selected = nil
+    }
+
+    func revealInFinder(_ node: SpaceLensNode) {
+        NSWorkspace.shared.activateFileViewerSelecting([node.url])
+    }
+
+    func trashSelected() {
+        guard let node = selected else { return }
+        Task { [deletion] in
+            do {
+                let result = try await deletion.trashWithFailures(urls: [node.url], source: .manual)
+                await MainActor.run {
+                    self.lastUndoToken = result.token
+                    self.actionMessage = "Moved \(byteString(result.token.totalBytes)) to trash"
+                    self.selected = nil
+                }
+                self.scan()
+            } catch {
+                await MainActor.run { self.actionMessage = "Trash failed: \(error)" }
+            }
+        }
+    }
+
+    func undoLast() {
+        guard let token = lastUndoToken else { return }
+        Task { [deletion] in
+            do {
+                try await deletion.undo(token)
+                await MainActor.run {
+                    self.lastUndoToken = nil
+                    self.actionMessage = "Restored \(byteString(token.totalBytes))"
+                }
+                self.scan()
+            } catch {
+                await MainActor.run { self.actionMessage = "Undo failed: \(error)" }
+            }
+        }
+    }
+
+    func dismissUndo() {
+        guard let token = lastUndoToken else { return }
+        Task { [deletion] in
+            try? await deletion.empty(token)
+            await MainActor.run {
+                self.lastUndoToken = nil
+                self.actionMessage = nil
+            }
+        }
+    }
+
+    static func tildify(_ path: String) -> String {
+        let home = NSHomeDirectory()
+        return path.hasPrefix(home) ? "~" + String(path.dropFirst(home.count)) : path
+    }
+}
+
+// MARK: - View
+
+struct SpaceLensView: View {
+    @StateObject private var model = SpaceLensModel()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            header
+            controls
+            if model.tree == nil && !model.isScanning {
+                emptyState
+            } else if model.isScanning && model.tree == nil {
+                scanningState
+            } else {
+                treemapSection
+            }
+            if model.lastUndoToken != nil { undoBanner }
+            else if let msg = model.actionMessage {
+                Text(msg).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 28)
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    // MARK: Header
+
+    private var header: some View {
+        SectionHeader(
+            eyebrow: "Treemap of every byte",
+            title: "Space Lens",
+            subtitle: "See where your disk is going. Drill in, reclaim out."
+        )
+    }
+
+    // MARK: Controls
+
+    private var controls: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "folder.fill")
+                .foregroundStyle(Theme.brandGradient)
+            Text(SpaceLensModel.tildify(model.root.path))
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+            Button("Choose Folder…") { model.chooseRoot() }
+                .buttonStyle(SoftButtonStyle())
+            if model.isScanning {
+                Button("Cancel") { model.cancel() }
+                    .buttonStyle(SoftButtonStyle())
+            } else {
+                Button {
+                    model.scan()
+                } label: {
+                    Label(model.tree == nil ? "Scan" : "Rescan", systemImage: "rectangle.grid.3x2")
+                }
+                .buttonStyle(GradientButtonStyle())
+            }
+        }
+        .padding(14)
+        .glassCard(padded: false)
+    }
+
+    // MARK: States
+
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Theme.accentSoft)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Theme.accentRing, lineWidth: 1)
+                        )
+                        .frame(width: 52, height: 52)
+                    Image(systemName: "rectangle.grid.3x2")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Visualize every byte on your disk")
+                        .font(.system(size: 22, weight: .semibold))
+                        .tracking(-0.3)
+                    Text("A live treemap of any folder — click to drill in, right-click to clean.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
+            // Three quick-start tiles
+            HStack(spacing: 10) {
+                QuickStartTile(icon: "house",       label: "Home",      subtitle: "~/", action: { model.root = URL(fileURLWithPath: NSHomeDirectory()); model.scan() })
+                QuickStartTile(icon: "internaldrive", label: "System", subtitle: "/", action: { model.root = URL(fileURLWithPath: "/"); model.scan() })
+                QuickStartTile(icon: "doc.text.image", label: "Documents", subtitle: "~/Documents", action: { model.root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Documents"); model.scan() })
+                QuickStartTile(icon: "arrow.down.circle", label: "Downloads", subtitle: "~/Downloads", action: { model.root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Downloads"); model.scan() })
+            }
+        }
+        .padding(28)
+        .glassCard(padded: false)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var scanningState: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(Theme.accent.opacity(0.10), lineWidth: 4)
+                    .frame(width: 52, height: 52)
+                ProgressView().controlSize(.regular).tint(Theme.accent)
+            }
+            VStack(spacing: 4) {
+                Text("Mapping the filesystem…")
+                    .font(.system(size: 14, weight: .semibold))
+                Text(byteString(model.bytesScanned))
+                    .font(.system(size: 22, weight: .bold).monospacedDigit())
+                    .foregroundStyle(Theme.brandGradient)
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.18), value: model.bytesScanned)
+                Text(model.currentScanPath.isEmpty ? "warming up…" : model.currentScanPath)
+                    .font(.system(size: 11).monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 480)
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 280)
+        .padding(28)
+        .glassCard(padded: false)
+    }
+
+    // MARK: Treemap section
+
+    private var treemapSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            breadcrumb
+            HStack(alignment: .top, spacing: 14) {
+                sunburstPanel
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                rightSidebar
+                    .frame(width: 280)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private var sunburstPanel: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Theme.border, lineWidth: 1)
+            if let cur = model.current, !cur.children.isEmpty {
+                SunburstView(
+                    focus: cur,
+                    canAscend: !model.path.isEmpty,
+                    hovering: $model.hovering,
+                    selected: $model.selected,
+                    onSelect: { _ in /* binding already synced */ },
+                    onDrill: { node in model.drill(into: node) },
+                    onAscend: {
+                        if !model.path.isEmpty {
+                            model.path.removeLast()
+                            model.selected = nil
+                        }
+                    }
+                )
+                .id(cur.id)
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .padding(20)
+            } else {
+                Text("Empty folder")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(minHeight: 480)
+    }
+
+    /// Right-side sidebar: items list (hover-synced with sunburst) on top,
+    /// selection details + actions on the bottom.
+    private var rightSidebar: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            itemsList
+            Divider().opacity(0.3)
+            selectionDetail
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .glassCard(padded: false)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private var itemsList: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("ITEMS")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.6)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if let cur = model.current {
+                    Text("\(cur.children.count)")
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 3) {
+                    if let cur = model.current {
+                        ForEach(Array(cur.children.enumerated()), id: \.element.id) { idx, child in
+                            ChildListRow(
+                                child: child,
+                                hue: hueForChildIndex(idx, of: cur),
+                                isSelected: model.selected?.id == child.id,
+                                isHovering: model.hovering?.id == child.id,
+                                onHoverChange: { hovering in
+                                    if hovering {
+                                        if model.hovering?.id != child.id { model.hovering = child }
+                                    } else if model.hovering?.id == child.id {
+                                        model.hovering = nil
+                                    }
+                                },
+                                onTap: { model.selected = child },
+                                onDrill: { model.drill(into: child) }
+                            )
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 280)
+        }
+    }
+
+    private var selectionDetail: some View {
+        let node = model.selected ?? model.hovering
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(model.selected != nil ? "SELECTED" : "HOVER")
+                    .font(.system(size: 9, weight: .bold))
+                    .tracking(1.6)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            if let n = node {
+                ZStack(alignment: .leading) {
+                    LinearGradient(
+                        colors: [Theme.accent.opacity(0.30), Theme.accent.opacity(0.05)],
+                        startPoint: .leading, endPoint: .trailing
+                    )
+                    .frame(height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    HStack(spacing: 12) {
+                        Image(systemName: n.isDirectory ? "folder.fill" : "doc.fill")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(Theme.brandGradient)
+                            .padding(.leading, 14)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(n.name)
+                                .font(.system(size: 13, weight: .semibold))
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            Text(byteString(n.size))
+                                .font(.system(size: 16, weight: .bold).monospacedDigit())
+                                .foregroundStyle(Theme.accent)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+
+                Text(SpaceLensModel.tildify(n.url.path))
+                    .font(.system(size: 10).monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+
+                if let cur = model.current, cur.size > 0 {
+                    let pct = Double(n.size) / Double(cur.size) * 100
+                    HStack(spacing: 6) {
+                        Text(String(format: "%.1f%%", pct))
+                            .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(Theme.accent)
+                        Text("of \(cur.name)")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                if model.selected != nil {
+                    HStack(spacing: 8) {
+                        Button {
+                            if let s = model.selected { model.revealInFinder(s) }
+                        } label: {
+                            Label("Reveal", systemImage: "magnifyingglass")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .buttonStyle(SoftButtonStyle())
+                        Button {
+                            model.trashSelected()
+                        } label: {
+                            Label("Trash", systemImage: "trash")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .buttonStyle(GradientButtonStyle())
+                    }
+                    if let n = model.selected, n.isDirectory && !n.children.isEmpty {
+                        Button {
+                            model.drill(into: n)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.down.right.square")
+                                Text("Drill into \(n.name)")
+                            }
+                            .font(.system(size: 12, weight: .medium))
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(SoftButtonStyle())
+                    }
+                }
+            } else {
+                Text("Hover or click a tile to inspect.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// Mirrors the hue calculation in `SunburstLayout.build` for top-level
+    /// children (depth 0) so list dots match the sunburst colors exactly.
+    private func hueForChildIndex(_ idx: Int, of parent: SpaceLensNode) -> Double {
+        let totalSpan = 2 * Double.pi
+        let total = Double(parent.size)
+        guard total > 0 else { return 0 }
+        var current: Double = 0
+        for (i, c) in parent.children.enumerated() {
+            let span = totalSpan * Double(c.size) / total
+            let end = current + span
+            if i == idx {
+                let mid = (current + end) / 2.0
+                return mid / totalSpan
+            }
+            current = end
+        }
+        return 0
+    }
+
+    private var breadcrumb: some View {
+        HStack(spacing: 6) {
+            BreadcrumbCrumb(label: model.root.lastPathComponent.isEmpty ? "/" : model.root.lastPathComponent,
+                            icon: "house.fill",
+                            isLast: model.path.isEmpty,
+                            action: { model.navigate(toIndex: -1) })
+            ForEach(Array(model.path.enumerated()), id: \.offset) { idx, node in
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary.opacity(0.6))
+                BreadcrumbCrumb(label: node.name,
+                                icon: nil,
+                                isLast: idx == model.path.count - 1,
+                                action: { model.navigate(toIndex: idx) })
+            }
+            Spacer()
+            if let cur = model.current {
+                Text(byteString(cur.size))
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var undoBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.uturn.backward.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(Theme.ok)
+            Text(model.actionMessage ?? "Files staged in trash")
+                .font(.system(size: 13, weight: .medium))
+            Spacer()
+            Button("Undo") { model.undoLast() }
+                .buttonStyle(SoftButtonStyle())
+            Button("Dismiss") { model.dismissUndo() }
+                .buttonStyle(SoftButtonStyle())
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Theme.ok.opacity(0.10))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Theme.ok.opacity(0.34), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Items list row (sidebar)
+
+/// Row in the right-sidebar items list. Hover state syncs with the sunburst's
+/// hovering binding, so hovering here also lights up the corresponding ring.
+private struct ChildListRow: View {
+    let child: SpaceLensNode
+    let hue: Double
+    let isSelected: Bool
+    let isHovering: Bool
+    let onHoverChange: (Bool) -> Void
+    let onTap: () -> Void
+    let onDrill: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 10) {
+                // Color dot matching the sunburst hue
+                Circle()
+                    .fill(Color(hue: hue, saturation: 0.62, brightness: 0.95))
+                    .frame(width: 9, height: 9)
+                    .overlay(
+                        Circle().strokeBorder(.white.opacity(0.35), lineWidth: 0.5)
+                    )
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(child.name)
+                        .font(.system(size: 12.5,
+                                      weight: isSelected ? .semibold : .medium))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Text(child.isDirectory
+                         ? "\(child.children.count) item\(child.children.count == 1 ? "" : "s")"
+                         : "file")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 6)
+
+                Text(byteString(child.size))
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+
+                if child.isDirectory && !child.children.isEmpty {
+                    Button(action: onDrill) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .opacity(isHovering ? 1.0 : 0.4)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(isSelected
+                          ? Theme.accentSoft
+                          : (isHovering ? Theme.hoverFill : Color.clear))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(isSelected ? Theme.accentRing : Color.clear, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { onHoverChange($0) }
+        .simultaneousGesture(TapGesture(count: 2).onEnded { onDrill() })
+    }
+}
+
+// MARK: - Helpers
+
+private struct BreadcrumbCrumb: View {
+    let label: String
+    let icon: String?
+    let isLast: Bool
+    let action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                Text(label)
+                    .font(.system(size: 12, weight: isLast ? .semibold : .medium))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isLast ? Color.primary : Color.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(hovering && !isLast ? Theme.accentSoft : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .disabled(isLast)
+    }
+}
+
+private struct QuickStartTile: View {
+    let icon: String
+    let label: String
+    let subtitle: String
+    let action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Theme.accentSoft)
+                        .frame(width: 32, height: 32)
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label)
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(subtitle)
+                        .font(.system(size: 11).monospaced())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(hovering ? Theme.accentRing : Theme.border, lineWidth: 1)
+            )
+            .scaleEffect(hovering ? 1.015 : 1.0)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.15), value: hovering)
+    }
+}
+
+private func byteString(_ bytes: UInt64) -> String {
+    ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+}
