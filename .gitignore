@@ -9,6 +9,8 @@
 # Session-generated AI docs — keep root clean
 /*.md
 !CLAUDE.md
+!README.md
+!CONTRIBUTING.md
 
 # XcodeGen output — project is generated from project.yml, don't commit.
 *.xcodeproj/
