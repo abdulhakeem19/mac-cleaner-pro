@@ -106,23 +106,12 @@ struct SettingsView: View {
         return nil
     }
 
-    private static let sponsorLinks: [(label: String, systemImage: String, url: String)] = [
-        ("GitHub Sponsors", "heart.fill", "https://github.com/sponsors/vunexolabs"),
-        ("Open Collective", "banknote.fill", "https://opencollective.com/mac-cleaner-pro"),
-        ("Ko-fi", "cup.and.saucer.fill", "https://ko-fi.com/vunexolabs"),
-    ]
-
-    @ViewBuilder private var sponsorButtons: some View {
-        ForEach(Self.sponsorLinks, id: \.label) { link in
-            Button {
-                if let url = URL(string: link.url) {
-                    NSWorkspace.shared.open(url)
-                }
-            } label: {
-                Label(link.label, systemImage: link.systemImage)
-                    .font(.system(size: 12, weight: .semibold))
-            }
-            .buttonStyle(SoftButtonStyle())
+    // Sponsor accounts (GitHub Sponsors, Open Collective, Ko-fi) aren't set
+    // up yet — point supporters at email in the meantime instead of linking
+    // to accounts that don't exist.
+    private func openSupportEmail() {
+        if let url = URL(string: "mailto:hello@maccleanerpro.com?subject=Supporting%20Mac%20Cleaner%20Pro") {
+            NSWorkspace.shared.open(url)
         }
     }
 
@@ -175,13 +164,17 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 14) {
                 LicenseStateBadge(state: model.licenseState, graceDaysLeft: model.gracePeriodDaysLeft)
 
-                Text("Donations fund the Apple Developer Program fee for notarization, server/hosting costs, and ongoing maintenance — this is a one-person project.")
+                Text("Donations fund the Apple Developer Program fee for notarization, server/hosting costs, and ongoing maintenance — this is a one-person project. Sponsor accounts are still being set up, so email us in the meantime if you'd like to help.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                HStack(spacing: 8) {
-                    sponsorButtons
+                Button {
+                    openSupportEmail()
+                } label: {
+                    Label("Email hello@maccleanerpro.com", systemImage: "envelope.fill")
+                        .font(.system(size: 12, weight: .semibold))
                 }
+                .buttonStyle(SoftButtonStyle())
 
                 Divider()
 
