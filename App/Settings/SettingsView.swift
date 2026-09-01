@@ -5,7 +5,7 @@ import Core
 @MainActor
 final class SettingsModel: ObservableObject {
     @Published var licenseKey: String = ""
-    @Published var licenseState: LicenseManager.State = .trial(daysRemaining: 14)
+    @Published var licenseState: LicenseManager.State = .free
     @Published var gracePeriodDaysLeft: Int? = nil
     @Published var isActivating = false
     /// Inline result message shown under the key field after an Activate attempt.
@@ -92,10 +92,10 @@ struct SettingsView: View {
     @EnvironmentObject private var theme: ThemeManager
     @State private var showingDevices = false
 
-    private var isTrialOrExpired: Bool {
+    private var isFree: Bool {
         switch model.licenseState {
-        case .trial, .expired: return true
-        case .pro: return false
+        case .free: return true
+        case .pro:  return false
         }
     }
 
@@ -233,7 +233,7 @@ struct SettingsView: View {
                     Spacer()
 
                     // Show devices button (only when activated)
-                    if !isTrialOrExpired, let _ = currentLicenseKey {
+                    if !isFree, let _ = currentLicenseKey {
                         Button {
                             showingDevices = true
                         } label: {
@@ -488,34 +488,33 @@ private struct LicenseStateBadge: View {
 
     private var isOffline: Bool { graceDaysLeft != nil }
 
-    // Mac Cleaner Pro is free and open source — trial/expired both just mean
-    // "no legacy license on file," so they render identically. Only `.pro`
-    // (a legacy pre-open-source purchase) gets distinct treatment, as a
-    // thank-you badge rather than a feature gate.
+    // Mac Cleaner Pro is free and open source — `.free` means "no legacy
+    // license on file." Only `.pro` (a legacy pre-open-source purchase)
+    // gets distinct treatment, as a thank-you badge rather than a feature gate.
     private var badgeColor: Color {
         switch state {
-        case .trial, .expired: return Theme.ok
-        case .pro:              return isOffline ? Theme.warn : Theme.ok
+        case .free: return Theme.ok
+        case .pro:  return isOffline ? Theme.warn : Theme.ok
         }
     }
 
     private var badgeIcon: String {
         switch state {
-        case .trial, .expired: return "checkmark.seal.fill"
-        case .pro:              return isOffline ? "wifi.slash" : "heart.fill"
+        case .free: return "checkmark.seal.fill"
+        case .pro:  return isOffline ? "wifi.slash" : "heart.fill"
         }
     }
 
     private var badgeText: String {
         switch state {
-        case .trial, .expired: return "Free & open source"
-        case .pro:              return isOffline ? "Supporter · offline mode" : "Supporter"
+        case .free: return "Free & open source"
+        case .pro:  return isOffline ? "Supporter · offline mode" : "Supporter"
         }
     }
 
     private var badgeSub: String {
         switch state {
-        case .trial, .expired:
+        case .free:
             return "No license required — every feature is unlocked."
         case .pro(let key):
             if let days = graceDaysLeft {

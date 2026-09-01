@@ -9,14 +9,7 @@ final class LicenseManagerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        UserDefaults.standard.removeObject(forKey: "MacCleanerPro.installDate")
         UserDefaults.standard.removeObject(forKey: "MacCleanerPro.licenseKey")
-        // Clear trial date Keychain entry
-        let trialQ: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: "com.maccleanerpro",
-        ]
-        SecItemDelete(trialQ as CFDictionary)
         // Clear license storage Keychain entry so tests start with a clean slate
         let licenseQ: [String: Any] = [
             kSecClass as String:       kSecClassGenericPassword,
@@ -25,17 +18,13 @@ final class LicenseManagerTests: XCTestCase {
         SecItemDelete(licenseQ as CFDictionary)
     }
 
-    func testFreshInstallStartsTrial() async {
+    func testFreshInstallIsFree() async {
         let mgr = LicenseManager()
         // Defend against any license left in the login Keychain by the real app
         // (the test bundle can read the same generic-password items).
         _ = await mgr.clearLicense()
         let state = await mgr.currentState()
-        if case .trial(let days) = state {
-            XCTAssertEqual(days, 14)
-        } else {
-            XCTFail("expected trial, got \(state)")
-        }
+        XCTAssertEqual(state, .free)
     }
 
     func testValidSignedKeyUnlocksPro() async {
@@ -44,32 +33,10 @@ final class LicenseManagerTests: XCTestCase {
         if case .pro = state {} else { XCTFail("expected pro, got \(state)") }
     }
 
-    func testInvalidKeyRemainsTrial() async {
+    func testInvalidKeyRemainsFree() async {
         let mgr = LicenseManager()
         let state = await mgr.setLicenseKey("not-a-key")
-        if case .trial = state {} else { XCTFail("expected trial, got \(state)") }
-    }
-
-    func testExpiredAfterTrialWindow() async {
-        // Clear any stored license directly (does NOT seed an install date the
-        // way currentState()/clearLicense() would).
-        await SecureLicenseStorage.shared.clearLicense()
-        deleteTrialDateKeychain()
-        // Stamp install date 30 days ago — with no Keychain trial date present,
-        // installDateOrSeed() falls back to this UserDefaults value.
-        UserDefaults.standard.set(Date(timeIntervalSinceNow: -30 * 86_400),
-                                  forKey: "MacCleanerPro.installDate")
-        let mgr = LicenseManager()
-        let state = await mgr.currentState()
-        XCTAssertEqual(state, .expired)
-    }
-
-    private func deleteTrialDateKeychain() {
-        let q: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: "com.maccleanerpro",
-        ]
-        SecItemDelete(q as CFDictionary)
+        XCTAssertEqual(state, .free)
     }
 
     // MARK: - Revalidation revocation policy
@@ -90,7 +57,7 @@ final class LicenseManagerTests: XCTestCase {
         XCTAssertFalse(LicenseManager.isAuthoritativeRevocation("limit reached"))
     }
 
-    func testIsUnlockedDuringTrial() async {
+    func testIsUnlockedWhenFree() async {
         let mgr = LicenseManager()
         let unlocked = await mgr.isUnlocked()
         XCTAssertTrue(unlocked)

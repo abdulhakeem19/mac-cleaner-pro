@@ -1,7 +1,12 @@
 import Foundation
 import Security
 
-/// Trial/Pro/Expired state machine.
+/// Pro/Free state machine.
+///
+/// Mac Cleaner Pro is free and open source — every feature is unlocked
+/// regardless of license state. `.pro` is kept only to recognize legacy
+/// license keys from pre-open-source purchases (shown as "Supporter" in
+/// Settings); everyone else is `.free`, with no trial or expiry.
 ///
 /// License key is stored in the macOS Keychain via SecureLicenseStorage.
 /// Background revalidation runs every 24 h when the app is live; a 7-day
@@ -9,22 +14,14 @@ import Security
 public actor LicenseManager {
 
     public enum State: Equatable, Sendable {
-        case trial(daysRemaining: Int)
+        case free
         case pro(licenseKey: String)
-        case expired
     }
 
     public static let shared = LicenseManager()
 
-    private let trialLengthDays = 14
-
-    // Legacy keys — read-once for migration, then removed
-    private let legacyInstallDateKey = "MacCleanerPro.installDate"
-    private let legacyLicenseKeyKey  = "MacCleanerPro.licenseKey"
-
-    // Keychain identifiers for trial start date (separate from license storage)
-    private let keychainService = "com.maccleanerpro"
-    private let keychainDateKey = "installDate"
+    // Legacy key — read-once for migration, then removed
+    private let legacyLicenseKeyKey = "MacCleanerPro.licenseKey"
 
     public init() {}
 
@@ -39,7 +36,7 @@ public actor LicenseManager {
             // Corrupted / tampered entry — purge it
             await SecureLicenseStorage.shared.clearLicense()
         }
-        return trialState()
+        return .free
     }
 
     // MARK: - Revalidation
@@ -146,10 +143,7 @@ public actor LicenseManager {
     }
 
     public func isUnlocked() async -> Bool {
-        switch await currentState() {
-        case .pro, .trial: return true
-        case .expired:     return false
-        }
+        return true
     }
 
     public func getLicensePayload() async -> LicensePayload? {
@@ -163,62 +157,6 @@ public actor LicenseManager {
 
     public static func isStructurallyValid(_ key: String) -> Bool {
         LicenseValidator.validate(key) != .invalid(.invalidFormat)
-    }
-
-    // MARK: - Trial helpers
-
-    private func trialState() -> State {
-        let installDate = installDateOrSeed()
-        let daysElapsed = Int(Date().timeIntervalSince(installDate) / 86_400)
-        let remaining   = trialLengthDays - daysElapsed
-        return remaining > 0 ? .trial(daysRemaining: remaining) : .expired
-    }
-
-    /// Migration-safe: reads from Keychain first, falls back to UserDefaults
-    /// (existing users), or seeds a fresh Keychain entry.
-    private func installDateOrSeed() -> Date {
-        if let kc = keychainRead() { return kc }
-        if let ud = UserDefaults.standard.object(forKey: legacyInstallDateKey) as? Date {
-            keychainWrite(ud)
-            return ud
-        }
-        let now = Date()
-        keychainWrite(now)
-        return now
-    }
-
-    private func keychainRead() -> Date? {
-        let q: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: keychainDateKey,
-            kSecReturnData as String:  true,
-            kSecMatchLimit as String:  kSecMatchLimitOne,
-        ]
-        var out: AnyObject?
-        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess,
-              let data = out as? Data,
-              let str  = String(data: data, encoding: .utf8)
-        else { return nil }
-        return ISO8601DateFormatter().date(from: str)
-    }
-
-    private func keychainWrite(_ date: Date) {
-        let data = Data(ISO8601DateFormatter().string(from: date).utf8)
-        let del: [String: Any] = [
-            kSecClass as String:       kSecClassGenericPassword,
-            kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: keychainDateKey,
-        ]
-        SecItemDelete(del as CFDictionary)
-        let add: [String: Any] = [
-            kSecClass as String:                kSecClassGenericPassword,
-            kSecAttrService as String:          keychainService,
-            kSecAttrAccount as String:          keychainDateKey,
-            kSecValueData as String:            data,
-            kSecAttrAccessible as String:       kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-        ]
-        SecItemAdd(add as CFDictionary, nil)
     }
 
     // MARK: - Paddle stub (activate when account is approved)

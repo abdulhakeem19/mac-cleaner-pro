@@ -11,7 +11,7 @@ import Core
 final class LicenseGate: ObservableObject {
     static let shared = LicenseGate()
 
-    @Published private(set) var state: LicenseManager.State = .trial(daysRemaining: 14)
+    @Published private(set) var state: LicenseManager.State = .free
     /// Non-nil while the Pro license is validated but the device is offline.
     /// Value is the number of grace period days remaining before the license locks.
     @Published private(set) var gracePeriodDaysLeft: Int? = nil
